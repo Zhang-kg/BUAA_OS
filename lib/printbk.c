@@ -68,56 +68,20 @@ lp_Print(void (*output)(void *, char *, int),
 
 	{ 
 	    /* scan for the next '%' */
-	    char *curFmt = fmt;
-		while (*curFmt != '\0' && *curFmt != '%') {
-			curFmt++;
-		}
-		/* flush the string found so far */
-		OUTPUT(arg, fmt, curFmt - fmt);
-		fmt = curFmt;
-		if (*fmt == '\0') {
-			break;
-		}
-		if (*fmt == '%') {
-			fmt++;
-		}
+	    /* flush the string found so far */
+
 	    /* check "are we hitting the end?" */
 	}
 
 	
 	/* we found a '%' */
-	ladjust = 0;
-	if (*fmt == '-') {
-		ladjust = 1;
-		fmt++;	
-	}	
 	
-	padc = ' ';
-	if (*fmt == '0') {
-		padc = '0';
-		fmt ++;
-	}
-	
-	width = 0;
-	while (IsDigit(*fmt)){
-		width = width * 10 + Ctod(*fmt);
-		fmt++;
-	}	
+	/* check for long */
 
-	prec = 6;
-	if (*fmt == '.') {
-		fmt++;
-		while (IsDigit(*fmt)) {
-			prec = prec * 10 + Ctod(*fmt);
-			fmt++;
-		}
-	}
+	/* check for other prefixes */
+
+	/* check format flag */
 	
-	longFlag = 0;
-	if (*fmt == 'l') {
-		longFlag = 1;
-		fmt++;
-	}
 
 	negFlag = 0;
 	switch (*fmt) {
@@ -144,12 +108,7 @@ lp_Print(void (*output)(void *, char *, int),
 			Refer to other part (case 'b',case 'o' etc.) and func PrintNum to complete this part.
 			Think the difference between case 'd' and others. (hint: negFlag).
 		*/
-	    if (num < 0) {
-			negFlag = 1;
-			num *= -1;
-		}
-		length = PrintNum(buf, num, 10, negFlag, width, ladjust, padc, 0);
-		OUTPUT(arg, buf, length);
+	    
 		break;
 
 	 case 'o':
