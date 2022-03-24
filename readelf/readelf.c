@@ -71,15 +71,15 @@ int readelf(u_char *binary, int size)
 		for (Nr = 0; Nr < ph_entry_count; Nr++) {
 			table[Nr] = (Elf32_Phdr*)(ptr_ph_table + Nr * ph_entry_size);
 		}	
-		for (int i = 0; i < ph_entry_count; i++) {
-			for (int j = 0; j < ph_entry_count; j++) {
-				if (table[i]->p_offset > table[j]->p_offset) {
-					Elf32_Phdr * middle = table[i];
-					table[i] = table[j];
-					table[j] = middle;
-				}
-			}
-		}
+		//for (int i = 0; i < ph_entry_count; i++) {
+		//	for (int j = 0; j < ph_entry_count; j++) {
+		//		if (table[i]->p_vaddr > table[j]->p_vaddr) {
+		//			Elf32_Phdr * middle = table[i];
+		//			table[i] = table[j];
+		//			table[j] = middle;
+		//		}
+		//	}
+		//}
 		//for (int i = 0; i < ph_entry_count; i++) {
 
 
@@ -91,12 +91,12 @@ int readelf(u_char *binary, int size)
 				printf("%d:0x%x,0x%x\n", Nr, phdr->p_filesz, phdr->p_memsz);
 				continue;
 			}
-			int l1 = phdr->p_offset;
-			int r1 = l1 + phdr->p_filesz;
+			int l1 = phdr->p_vaddr;
+			int r1 = l1 + phdr->p_memsz;
 		//	Elf32_Phdr* nexphdr = (Elf32_Phdr*)(ptr_ph_table + (Nr + 1) * ph_entry_size);
 			Elf32_Phdr* nexphdr = table[Nr + 1];
-			int l2 = nexphdr->p_offset;
-			int r2 = l2 + nexphdr->p_filesz;
+			int l2 = nexphdr->p_vaddr;
+			int r2 = l2 + nexphdr->p_memsz;
 			if (ROUNDDOWN(r1, BY2PG) == ROUNDDOWN(l2, BY2PG)) {
 				printf("Overlay at page va : 0x%lx\n", ROUNDDOWN(r1, BY2PG));
 			} else if (l2 < r1) {
