@@ -67,17 +67,34 @@ int readelf(u_char *binary, int size)
 		ptr_ph_table 	= (binary + ehdr->e_phoff);
 		ph_entry_count 	= ehdr->e_phnum;
 		ph_entry_size 	= ehdr->e_phentsize;
-		
-
+		Elf32_Phdr* table[10] = {0};
 		for (Nr = 0; Nr < ph_entry_count; Nr++) {
-			phdr = (Elf32_Phdr*)(ptr_ph_table + Nr * ph_entry_size);
+			table[Nr] = (Elf32_Phdr*)(ptr_ph_table + Nr * ph_entry_size);
+		}	
+		for (int i = 0; i < ph_entry_count; i++) {
+			for (int j = 0; j < ph_entry_count; j++) {
+				if (table[i]->p_offset > table[j]->p_offset) {
+					Elf32_Phdr * middle = table[i];
+					table[i] = table[j];
+					table[j] = middle;
+				}
+			}
+		}
+		//for (int i = 0; i < ph_entry_count; i++) {
+
+
+		
+		for (Nr = 0; Nr < ph_entry_count; Nr++) {
+		//	phdr = (Elf32_Phdr*)(ptr_ph_table + Nr * ph_entry_size);
+			phdr = table[Nr];
 			if (Nr == ph_entry_count - 1) {
 				printf("%d:0x%x,0x%x\n", Nr, phdr->p_filesz, phdr->p_memsz);
 				continue;
 			}
 			int l1 = phdr->p_offset;
 			int r1 = l1 + phdr->p_filesz;
-			Elf32_Phdr* nexphdr = (Elf32_Phdr*)(ptr_ph_table + (Nr + 1) * ph_entry_size);
+		//	Elf32_Phdr* nexphdr = (Elf32_Phdr*)(ptr_ph_table + (Nr + 1) * ph_entry_size);
+			Elf32_Phdr* nexphdr = table[Nr + 1];
 			int l2 = nexphdr->p_offset;
 			int r2 = l2 + nexphdr->p_filesz;
 			if (ROUNDDOWN(r1, BY2PG) == ROUNDDOWN(l2, BY2PG)) {
