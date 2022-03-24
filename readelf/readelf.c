@@ -98,10 +98,14 @@ int readelf(u_char *binary, int size)
 			int l2 = nexphdr->p_vaddr;
 			int r2 = l2 + nexphdr->p_memsz;
 			if (ROUNDDOWN(r1, BY2PG) == ROUNDDOWN(l2, BY2PG)) {
-				printf("Overlay at page va : 0x%x\n", ROUNDDOWN(r1, BY2PG));
-			} else if (l2 < r1) {
-				printf("Conflict at page va : 0x%x\n", ROUNDDOWN(r1, BY2PG));
-			} else {
+				if (l2 >= r1) {
+					printf("Overlay at page va : 0x%x\n", ROUNDDOWN(r1, BY2PG));
+				}
+				else if (l2 < r1) {
+					printf("Conflict at page va : 0x%x\n", ROUNDDOWN(l2, BY2PG));
+				}
+			}
+			else {
 				printf("%d:0x%x,0x%x\n", Nr, phdr->p_filesz, phdr->p_memsz);
 			}
 		}
