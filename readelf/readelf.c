@@ -71,15 +71,15 @@ int readelf(u_char *binary, int size)
 		for (Nr = 0; Nr < ph_entry_count; Nr++) {
 			table[Nr] = (Elf32_Phdr*)(ptr_ph_table + Nr * ph_entry_size);
 		}	
-		//for (int i = 0; i < ph_entry_count; i++) {
-		//	for (int j = 0; j < ph_entry_count; j++) {
-		//		if (table[i]->p_vaddr > table[j]->p_vaddr) {
-		//			Elf32_Phdr * middle = table[i];
-		//			table[i] = table[j];
-		//			table[j] = middle;
-		//		}
-		//	}
-		//}
+		for (int i = 0; i < ph_entry_count; i++) {
+			for (int j = i; j < ph_entry_count; j++) {
+				if (table[i]->p_vaddr > table[j]->p_vaddr) {
+					Elf32_Phdr * middle = table[i];
+					table[i] = table[j];
+					table[j] = middle;
+				}
+			}
+		}
 		//for (int i = 0; i < ph_entry_count; i++) {
 
 
