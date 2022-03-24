@@ -6,6 +6,7 @@
 
 #include "kerelf.h"
 #include <stdio.h>
+#define BY2PG 4096
 /* Overview:
  *   Check whether it is a ELF file.
  *
@@ -49,11 +50,11 @@ int readelf(u_char *binary, int size)
 
         int Nr;
 
-        Elf32_Shdr *shdr = NULL;
-
-        u_char *ptr_sh_table = NULL;
-        Elf32_Half sh_entry_count;
-        Elf32_Half sh_entry_size;
+        Elf32_Phdr *phdr = NULL;
+		
+        u_char *ptr_ph_table = NULL;
+        Elf32_Half ph_entry_count;
+        Elf32_Half ph_entry_size;
 
 
         // check whether `binary` is a ELF file.
@@ -63,18 +64,38 @@ int readelf(u_char *binary, int size)
         }
 
         // get section table addr, section header number and section header size.
-		ptr_sh_table 	= (binary + ehdr->e_shoff);
-		sh_entry_count 	= ehdr->e_shnum;
-		sh_entry_size 	= ehdr->e_shentsize;
+		ptr_ph_table 	= (binary + ehdr->e_phoff);
+		ph_entry_count 	= ehdr->e_phnum;
+		ph_entry_size 	= ehdr->e_phentsize;
+		
 
+		for (Nr = 0; Nr < ph_entry_count; Nr++) {
+			phdr = (Elf32_Phdr*)(ptr_ph_table + Nr * ph_entry_size);
+			if (Nr == ph_entry_count - 1) {
+				printf("%d:0x%x,0x%x\n", Nr, phdr->p_filesz, phdr->p_memsz);
+				continue;
+			}
+			int l1 = phdr->p_offset;
+			int r1 = l1 + phdr->p_filesz;
+			Elf32_Phdr* nexphdr = (Elf32_Phdr*)(ptr_ph_table + (Nr + 1) * ph_entry_size);
+			int l2 = nexphdr->p_offset;
+			int r2 = l2 + nexphdr->p_filesz;
+			if (ROUNDDOWN(r1, BY2PG) == ROUNDDOWN(l2, BY2PG)) {
+				printf("Overlay at page va : 0x%lx\n", ROUNDDOWN(r1, BY2PG));
+			} else if (l2 < r1) {
+				printf("Conflict at page va : 0x%lx\n", ROUNDDOWN(r1, BY2PG));
+			} else {
+				printf("%d:0x%x,0x%x\n", Nr, phdr->p_filesz, phdr->p_memsz);
+			}
+		}
 		//for (Nr = 0; Nr < sh_entry_count; Nr++)  {
 		//	shdr = (Elf32_Shdr*)(ptr_sh_table + Nr * sh_entry_size);
 		//	printf("%d:0x%x\n", Nr, shdr->sh_addr);
 		//}
-		for (Nr = 2; Nr <= 3; Nr ++) {
-			shdr = (Elf32_Shdr*)(ptr_sh_table + Nr * sh_entry_size);
-    		printf("Read : %d:0x%x,0x%x\n", Nr, shdr->sh_offset, shdr->sh_addr);
-		}    
+		//for (Nr = 2; Nr <= 3; Nr ++) {
+		//	shdr = (Elf32_Shdr*)(ptr_sh_table + Nr * sh_entry_size);
+    	//	printf("Read : %d:0x%x,0x%x\n", Nr, shdr->sh_offset, shdr->sh_addr);
+		//}    
 	
 
 		// for each section header, output section number and section addr. 
