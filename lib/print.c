@@ -86,18 +86,29 @@ lp_Print(void (*output)(void *, char *, int),
 
 	
 	/* we found a '%' */
+	//ladjust = 0;
+	//if (*fmt == '-') {
+	//	ladjust = 1;
+	//	fmt++;	
+	//}	
+	
+	//padc = ' ';
+	//if (*fmt == '0') {
+	//	padc = '0';
+	//	fmt ++;
+	//}
 	ladjust = 0;
-	if (*fmt == '-') {
-		ladjust = 1;
-		fmt++;	
-	}	
-	
 	padc = ' ';
-	if (*fmt == '0') {
-		padc = '0';
-		fmt ++;
+	while (*fmt == '0' || *fmt == '-') {
+		if (*fmt == '0' && ladjust == 0) {
+			padc = '0';	
+		}	
+		if (*fmt == '-') {
+			ladjust = 1;
+			padc = ' ';
+		}
+		fmt++;
 	}
-	
 	width = 0;
 	while (IsDigit(*fmt)){
 		width = width * 10 + Ctod(*fmt);
