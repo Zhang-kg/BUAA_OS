@@ -139,6 +139,11 @@ lp_Print(void (*output)(void *, char *, int),
 	 case 'T':
 		#define PrintC(c) \
 			{ \
+				int iii = 0; \
+				for (iii = 0; iii < width; iii++) {\
+					length = PrintChar(bug, ' ', 0, ladjust);\
+					OUTPUT(arg, buf, length); \
+ 				} \
 				length = PrintChar(buf, c, 0, ladjust); \
 				OUTPUT(arg, buf, length); \
 			}
