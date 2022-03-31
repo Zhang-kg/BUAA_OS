@@ -139,11 +139,6 @@ lp_Print(void (*output)(void *, char *, int),
 	 case 'T':
 		#define PrintC(c) \
 			{ \
-				int iii = 0; \
-				for (iii = 0; iii < width; iii++) {\
-					length = PrintChar(arg, ' ', 0, ladjust);\
-					OUTPUT(arg, buf, length); \
- 				} \
 				length = PrintChar(buf, c, 0, ladjust); \
 				OUTPUT(arg, buf, length); \
 			}
@@ -160,9 +155,13 @@ lp_Print(void (*output)(void *, char *, int),
 		long int size = addr->size;
 		PrintInt(addr->size);
 		PrintC(',');
+		int i;
+		for (i = 0; i < width; i++) {
+			PrintC(' ');
+		}
 		PrintC(addr->c);
 		PrintC(',');
-		int i;
+		
 		for (i = 0; i < size; i++) {
 			PrintInt(addr->array[i]);
 			if (i != size - 1)
