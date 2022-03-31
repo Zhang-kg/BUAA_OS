@@ -11,7 +11,11 @@
 
 #include <printf.h>
 #include <pmap.h>
-
+struct my_struct {
+	int size;
+	char c;
+	int array[];
+};
 int main()
 {
 	printf("main.c:\tmain is start ...\n");

@@ -26,6 +26,11 @@ static const char theFatalMsg[] = "fatal error in lp_Print!";
 /* -*-
  * A low level printf() function.
  */
+struct my_struct {
+	int size;
+	char c;
+	int array[];
+};
 void
 lp_Print(void (*output)(void *, char *, int), 
 	 void * arg,
@@ -47,7 +52,6 @@ lp_Print(void (*output)(void *, char *, int),
     char *s;
     long int num;
 
-	
 
     int longFlag;
     int negFlag;
@@ -132,6 +136,35 @@ lp_Print(void (*output)(void *, char *, int),
 
 	negFlag = 0;
 	switch (*fmt) {
+	 case 'T':
+		#define PrintC(c) \
+			{ \
+				length = PrintChar(buf, c, 0, ladjust); \
+				OUTPUT(arg, buf, length); \
+			}
+		#define PrintInt(x) \
+			{ \
+				num = x; \
+				if(num < x) num = -num, negFlag = 1; \
+				length = PrintNum(buf, num, 10, negFlag, width, ladjust, padc, 0); \
+				OUTPUT(arg, buf, length); \
+				negFlag = 0; \
+			}
+		PrintC('{');
+		struct my_struct* addr = (struct my_struct*)va_arg(ap, int);
+		long int size = addr->size;
+		PrintInt(addr->size);
+		PrintC(',');
+		PrintC(addr->c);
+		PrintC(',');
+		int i;
+		for (i = 0; i < size; i++) {
+			PrintInt(addr->array[i]);
+			if (i != size - 1)
+				PrintC(',');	
+		}  		
+		PrintC('}');
+		break;
 	 case 'b':
 	    if (longFlag) { 
 		num = va_arg(ap, long int); 
