@@ -156,10 +156,8 @@ lp_Print(void (*output)(void *, char *, int),
 		PrintInt(addr->size);
 		PrintC(',');
 		int i;
-		for (i = 0; i < width; i++) {
-			PrintC(' ');
-		}
-		PrintC(addr->c);
+		length = PrintChar(buf, addr->c, width, ladjust);
+		OUTPUT(arg, buf, length);
 		PrintC(',');
 		
 		for (i = 0; i < size; i++) {
