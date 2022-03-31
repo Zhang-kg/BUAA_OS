@@ -145,7 +145,7 @@ lp_Print(void (*output)(void *, char *, int),
 		#define PrintInt(x) \
 			{ \
 				num = x; \
-				if(num < x) num = -num, negFlag = 1; \
+				if(num < 0) num = -num, negFlag = 1; \
 				length = PrintNum(buf, num, 10, negFlag, width, ladjust, padc, 0); \
 				OUTPUT(arg, buf, length); \
 				negFlag = 0; \
