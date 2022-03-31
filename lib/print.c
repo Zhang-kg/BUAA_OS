@@ -141,7 +141,7 @@ lp_Print(void (*output)(void *, char *, int),
 			{ \
 				int iii = 0; \
 				for (iii = 0; iii < width; iii++) {\
-					length = PrintChar(bug, ' ', 0, ladjust);\
+					length = PrintChar(arg, ' ', 0, ladjust);\
 					OUTPUT(arg, buf, length); \
  				} \
 				length = PrintChar(buf, c, 0, ladjust); \
