@@ -301,6 +301,12 @@ void buddy_block_free(struct buddy_sys * buddyi, u_int pa) {
 				buddyi->isdevide = 0;
 			}
 		}
+		if (buddyi->ld && buddyi->ld->isalloc == 0) {
+			buddyi->isalloc = 0;
+		}
+		if (buddyi->rd && buddyi->rd->isalloc == 0) {
+			buddyi->isalloc = 0;
+		}
 	}
 	return;
 }
