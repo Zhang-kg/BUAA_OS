@@ -10,14 +10,14 @@ u_long maxpa;            /* Maximum physical address */
 u_long npage;            /* Amount of memory(in pages) */
 u_long basemem;          /* Amount of base memory(in bytes) */
 u_long extmem;           /* Amount of extended memory(in bytes) */
-
+u_long buddy_base_mem;
 Pde *boot_pgdir;
 
 struct Page *pages;
 static u_long freemem;
 
 static struct Page_list page_free_list;	/* Free list of physical pages */
-
+struct buddy_sys * buddy_head[8];
 
 /* Exercise 2.1 */
 /* Overview:
@@ -29,6 +29,7 @@ void mips_detect_memory()
 	 * (When use real computer, CMOS tells us how many kilobytes there are). */
 	maxpa = (1<<26);
 	basemem = 0x4000000;
+	buddy_base_mem = maxpa >> 1;
 	npage = basemem >> PGSHIFT; // 2^26 / 2^12
 	// Step 2: Calculate corresponding npage value.
 
@@ -153,6 +154,9 @@ void mips_vm_init()
 	envs = (struct Env *)alloc(NENV * sizeof(struct Env), BY2PG, 1);
 	n = ROUND(NENV * sizeof(struct Env), BY2PG);
 	boot_map_segment(pgdir, UENVS, n, PADDR(envs), PTE_R);
+	
+	//buddy_head = (struct buddy_sys *[8])alloc(8 * sizeof(struct buddy_sys*), BY2PG, 1);
+	
 
 	printf("pmap.c:\t mips vm init success\n");
 }
@@ -187,6 +191,112 @@ void page_init(void)
 	}
 }
 
+void buddy_init(void) {
+	int ii;
+	for (ii = 0; ii < 8; ii++) {
+		buddy_head[ii] = base_init(10, buddy_base_mem + ii * (4096 * (1 << (10)))); 	
+	//	printf("%d\n", buddy_head[ii]->ld);
+	}
+}
+struct buddy_sys allBuddy[8 * (1<<11)];
+int currentBuddy = 0;
+struct buddy_sys * base_init(int floor, u_long pa) {
+	struct buddy_sys * buddyfa = &allBuddy[currentBuddy];
+	currentBuddy++;
+	buddyfa->pa = pa;
+	buddyfa->floori = floor;
+	buddyfa->isalloc = 0;
+	buddyfa->ld = NULL;
+	buddyfa->rd = NULL;
+	buddyfa->isdevide = 0;
+	if (floor == 0) return buddyfa;
+	buddyfa->ld = base_init(floor-1, pa);
+	buddyfa->rd = base_init(floor-1, pa + (4096 * (1 << (floor - 1))));
+	return buddyfa;
+}
+int buddy_alloc(u_int size, u_int *pa, u_char * pi){
+	int i;
+	for (i = 0; i < 8; i++) {
+		if (buddy_head[i]->isalloc == 0) {
+			if (dfs(buddy_head[i], size, pa, pi) == 1) return 0;
+		}
+	}
+	return -1;
+}
+int dfs(struct buddy_sys * buddyi, u_int size, u_int * pa, u_char * pi) {
+	if (buddyi->isalloc == 1) {
+		return -1;
+	}
+	u_int blocksize;
+	if (buddyi->floori == 0) {
+		blocksize = 4096;
+	} else blocksize = 4096 * (1 << (buddyi -> floori -1));
+	if (buddyi->ld != NULL) {
+		if (dfs(buddyi->ld, size, pa, pi) == 1) {
+			buddyi->isdevide == 1;
+			if (buddyi->rd != NULL && buddyi->rd->isalloc == 1 && buddyi->ld->isalloc == 1) {
+				buddyi->isalloc = 1;
+			}
+			return 1;
+		}
+	}
+	if (buddyi->rd != NULL) {
+		if (dfs(buddyi->rd, size, pa, pi) == 1) {
+			buddyi->isdevide = 1;
+			if (buddyi->ld != NULL && buddyi->ld->isalloc == 1 && buddyi->rd->isalloc == 1) {
+				buddyi->isalloc = 1;
+			}
+			return 1;
+		}
+	}
+	blocksize = 4096 * (1 << (buddyi -> floori));
+	if (buddyi->ld && buddyi->rd && (buddyi->ld->isalloc || buddyi->rd->isalloc)) return -1;
+	if (buddyi->isdevide) return -1;
+	if (blocksize >= size) {
+		buddyi->isdevide = 0;
+		buddyi->isalloc = 1;
+		*pa = buddyi->pa;
+		*pi = buddyi->floori;
+		return 1;
+	}
+	return -1;
+}
+void setalloc(struct buddy_sys * buddyi) {
+	buddyi->isalloc = 1;
+	if (buddyi->ld != NULL) {
+		setalloc(buddyi->ld);
+	}
+	if (buddyi->rd != NULL) {
+		setalloc(buddyi->rd);
+	}
+	return;
+}
+
+void buddy_free(u_int pa){
+	int i;
+	for (i = 0; i < 8; i++) {
+		u_int blocksize = 4096 * (1 << 10);
+		if (buddy_head[i]->pa <= pa && buddy_head[i]->pa + blocksize > pa) {
+			buddy_block_free(buddy_head[i], pa);
+		}
+	}
+}
+void buddy_block_free(struct buddy_sys * buddyi, u_int pa) {
+	u_int blocksize = 4096 * (1 << (buddyi->floori));
+	if (buddyi->pa <= pa && buddyi->pa + blocksize) {
+		if (buddyi->isalloc == 1) {
+			buddyi->isalloc = 0;
+			if (buddyi->isdevide == 0) return;
+		}
+		blocksize /= 2;
+		if (buddyi->rd != NULL && buddyi->rd->pa <= pa) {
+			buddy_block_free(buddyi->rd, pa);
+		} else if (buddyi->rd != NULL && buddyi->rd->pa > pa) {
+			buddy_block_free(buddyi->ld, pa);
+		}
+	} 
+	return;
+}
 /* Exercise 2.4 */
 /*Overview:
   Allocates a physical page from free memory, and clear this page.

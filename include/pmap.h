@@ -20,7 +20,15 @@ struct Page {
 
 	u_short pp_ref;
 };
-
+struct buddy_sys {
+	struct buddy_sys * ld, * rd, *fa;
+	u_long pa;
+	u_short floori, isalloc, isdevide;
+};
+struct buddy_sys * base_init(int floor, u_long pa);
+int dfs(struct buddy_sys * buddyi, u_int size, u_int * pa, u_char * pi);
+void setalloc(struct buddy_sys * buddyi);
+void buddy_block_free(struct buddy_sys * buddyi, u_int pa);
 extern struct Page *pages;
 
 static inline u_long
@@ -99,6 +107,11 @@ void page_remove(Pde *pgdir, u_long va) ;
 void tlb_invalidate(Pde *pgdir, u_long va);
 
 void boot_map_segment(Pde *pgdir, u_long va, u_long size, u_long pa, int perm);
+
+
+void buddy_init(void);
+int buddy_alloc(u_int size, u_int * pa, u_char * pi);
+void buddy_free(u_int pa);
 
 extern struct Page *pages;
 
