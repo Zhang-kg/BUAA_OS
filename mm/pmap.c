@@ -284,10 +284,9 @@ void buddy_free(u_int pa){
 void buddy_block_free(struct buddy_sys * buddyi, u_int pa) {
 	u_int blocksize = 4096 * (1 << (buddyi->floori));
 	if (buddyi->pa <= pa && buddyi->pa + blocksize) {
-		if (buddyi->isalloc == 1) {
+		if (buddyi->pa == pa && buddyi->isalloc == 1 && buddyi->isdevide == 0) {
 			buddyi->isalloc = 0;
-			buddyi->isdevide = 0;
-			if (buddyi->isalloc == 0) return;
+			return;
 		}
 		blocksize /= 2;
 		if (buddyi->ld != NULL && buddyi->ld->pa <= pa && buddyi->ld->pa + blocksize > pa) {
