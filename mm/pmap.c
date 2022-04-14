@@ -286,15 +286,22 @@ void buddy_block_free(struct buddy_sys * buddyi, u_int pa) {
 	if (buddyi->pa <= pa && buddyi->pa + blocksize) {
 		if (buddyi->isalloc == 1) {
 			buddyi->isalloc = 0;
-			if (buddyi->isdevide == 0) return;
+			buddyi->isdevide = 0;
+			if (buddyi->isalloc == 0) return;
 		}
 		blocksize /= 2;
-		if (buddyi->rd != NULL && buddyi->rd->pa <= pa) {
-			buddy_block_free(buddyi->rd, pa);
-		} else if (buddyi->rd != NULL && buddyi->rd->pa > pa) {
+		if (buddyi->ld != NULL && buddyi->ld->pa <= pa && buddyi->ld->pa + blocksize > pa) {
 			buddy_block_free(buddyi->ld, pa);
+		} else if (buddyi->rd != NULL && buddyi->rd->pa <= pa && buddyi->rd->pa + blocksize > pa) {
+			buddy_block_free(buddyi->rd, pa);
 		}
-	} 
+		if (buddyi->ld && buddyi->ld->isalloc == 0 && buddyi->ld->isdevide == 0) {
+			if (buddyi->rd && buddyi->rd->isalloc == 0 && buddyi->rd->isdevide == 0) {
+				buddyi->isalloc = 0;
+				buddyi->isdevide = 0;
+			}
+		}
+	}
 	return;
 }
 /* Exercise 2.4 */

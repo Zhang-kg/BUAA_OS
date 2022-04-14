@@ -19,18 +19,17 @@ static void buddy_test(){
 u_int pa[20];
 	u_char pi; 
 	int i;
-	for(i = 0;i < 16;i++){
+	for(i = 0;i < 8;i++){
 		buddy_alloc(4096, &pa[i], &pi);
-		printf("%x %d\n", pa[i], (int)pi);
+//		printf("%x %d\n", pa[i], (int)pi);
 	}
 	for (i = 4; i < 8; i++) buddy_free(pa[i]);
 	for (i = 1; i >= 0; i--) buddy_free(pa[i]);
 	buddy_free(pa[3]);
 	buddy_free(pa[2]);
 	buddy_alloc(4096 * 7, &pa[0], &pi);
-//	buddy_alloc(4096 * 8, &pa[0], &pi);
 	printf("%x %d\n", pa[0], (int)pi);
-//for(i = 0;i <= 9;i += 2) buddy_free(pa[i]);
+	//for(i = 0;i <= 9;i += 2) buddy_free(pa[i]);
 //for(i = 0;i <= 9;i += 2){ 
 //buddy_alloc(4096 * (1 << i) + 1, &pa[i], &pi);
 //printf("%x %d\n", pa[i], (int)pi);
