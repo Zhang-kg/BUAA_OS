@@ -233,7 +233,7 @@ int dfs(struct buddy_sys * buddyi, u_int size, u_int * pa, u_char * pi) {
 	} else blocksize = 4096 * (1 << (buddyi -> floori -1));
 	if (buddyi->ld != NULL) {
 		if (dfs(buddyi->ld, size, pa, pi) == 1) {
-			buddyi->isdevide == 1;
+			buddyi->isdevide = 1;
 			if (buddyi->rd != NULL && buddyi->rd->isalloc == 1 && buddyi->ld->isalloc == 1) {
 				buddyi->isalloc = 1;
 			}
