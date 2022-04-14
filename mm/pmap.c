@@ -118,6 +118,30 @@ void boot_map_segment(Pde *pgdir, u_long va, u_long size, u_long pa, int perm)
     }
 }
 
+int page_protect(struct Page * pp) {
+	if (pp->pro == 0 && pp -> pp_ref == 0) {
+		pp->pro = 1;
+		LIST_REMOVE(pp, pp_link);		
+		return 0;
+	}	
+	if (pp->pro == 0 && pp->pp_ref != 0) {
+		return -1;
+	}
+	if (pp->pro == 1) {
+		return -2;
+	}
+}
+
+int page_status_query(struct Page * pp) {
+	if (pp->pro == 1) {
+		return 3;
+	}
+	if (pp->pro == 0 && pp->pp_ref == 0) {
+		return 2;
+	}
+	return 1;
+}
+
 /* Overview:
    Set up two-level page table.
 
