@@ -644,3 +644,27 @@ void pageout(int va, int context)
 	printf("pageout:\t@@@___0x%x___@@@  ins a page \n", va);
 }
 
+int inverted_page_lookup(Pde * pgdir, struct Page * pp, int vpn_buffer[]) {
+	int ans = 0;
+	Pde * pgdir_entry = pgdir;
+	int va = 0;	
+	int i = 0;
+	for (i = 0; i < 1024; i ++) {
+		pgdir_entry = pgdir + i;
+		if ((*pgdir_entry) & PTE_V) {
+			Pte * pgtable = KADDR(PTE_ADDR(*pgdir_entry));
+			int j;
+			for (j = 0; j < 1024; j++, va += 1) {
+				Pte * pgtable_entry = pgtable + j;
+				if ((*pgtable_entry) & PTE_V) {
+					if (PTE_ADDR(*pgtable_entry) == page2pa(pp)) {
+						vpn_buffer[ans] = va;
+						ans++;
+					}
+				} 
+			}
+		}
+		else va += 1024;
+	}
+	return ans;	
+}
