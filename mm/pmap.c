@@ -16,8 +16,8 @@ Pde *boot_pgdir;
 struct Page *pages;
 static u_long freemem;
 
-static struct Page_list page_free_list;	/* Free list of physical pages */
-
+struct Page_list page_free_list;	/* Free list of physical pages */
+struct Page_list fast_page_free_list;
 
 /* Exercise 2.1 */
 /* Overview:
@@ -170,7 +170,7 @@ void page_init(void)
 	/* Step 1: Initialize page_free_list. */
 	/* Hint: Use macro `LIST_INIT` defined in include/queue.h. */
 	LIST_INIT(&page_free_list);
-
+	LIST_INIT(&fast_page_free_list);
 	/* Step 2: Align `freemem` up to multiple of BY2PG. */
 	freemem = ROUND(freemem, BY2PG);
 
@@ -183,7 +183,10 @@ void page_init(void)
 	/* Step 4: Mark the other memory as free. */
 	for (now = &pages[PPN(PADDR(freemem))]; page2ppn(now) < npage; now ++) {
 		now -> pp_ref = 0;
-		LIST_INSERT_HEAD(&page_free_list, now, pp_link);
+		if ((page2pa(now)>>12) <= 12287)
+			LIST_INSERT_HEAD(&page_free_list, now, pp_link);
+		else 
+			LIST_INSERT_HEAD(&fast_page_free_list, now, pp_link);
 	}
 }
 
@@ -234,7 +237,9 @@ void page_free(struct Page *pp)
 	}
 	/* Step 2: If the `pp_ref` reaches 0, mark this page as free and return. */
 	else if (pp -> pp_ref == 0) {
-		LIST_INSERT_HEAD(&page_free_list, pp, pp_link);
+		
+		if ((page2pa(pp)>>12) <= 12287) LIST_INSERT_HEAD(&page_free_list, pp, pp_link);
+		else LIST_INSERT_HEAD(&fast_page_free_list, pp, pp_link);
 		return;
 	}
 
@@ -644,3 +649,31 @@ void pageout(int va, int context)
 	printf("pageout:\t@@@___0x%x___@@@  ins a page \n", va);
 }
 
+
+struct Page * page_migrate(Pde * pgdir, struct Page * pp) {
+	struct Page_list target = ((page2pa(pp)>>12) <= 12287)? fast_page_free_list : page_free_list;
+	struct Page * tp = LIST_FIRST(&target);
+	LIST_REMOVE(tp, pp_link);
+	bcopy(page2kva(pp), page2kva(tp), 4096);
+	Pde * pgdir_entry = pgdir;
+	int i = 0;
+	int va = 0;
+	for (i = 0; i < 1024; i ++) {
+		pgdir_entry = pgdir + i;
+		if ((*pgdir_entry) & PTE_V) {
+			Pte * pgtable = KADDR(PTE_ADDR(*pgdir_entry));
+			int j;
+			for (j = 0; j < 1024; j++) {
+				Pte * pgtable_entry = pgtable + j;
+				if ((*pgtable_entry) & PTE_V) {
+					if (PTE_ADDR(*pgtable_entry) == page2pa(pp)) {
+						//ans++;
+						*pgtable_entry = ((page2pa(tp)>>12)<<12) | ((*pgtable_entry) & 0xfff);
+					}
+				} 
+			}
+		}
+	}
+	page_free(pp);
+	return tp;
+}
