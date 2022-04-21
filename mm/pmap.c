@@ -667,7 +667,8 @@ struct Page * page_migrate(Pde * pgdir, struct Page * pp) {
 				Pte * pgtable_entry = pgtable + j;
 				if ((*pgtable_entry) & PTE_V) {
 					if (PTE_ADDR(*pgtable_entry) == page2pa(pp)) {
-						//ans++;
+						//ans++
+						pp->pp_ref --;
 						*pgtable_entry = ((page2pa(tp)>>12)<<12) | ((*pgtable_entry) & 0xfff);
 					}
 				} 
