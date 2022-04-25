@@ -280,38 +280,69 @@ static int load_icode_mapper(u_long va, u_int32_t sgsize,
                              u_char *bin, u_int32_t bin_size, void *user_data)
 {
 	struct Env *env = (struct Env *)user_data;
-	struct Page *p = NULL;
-	u_long i = 0;
-	int r;
-	u_long offset = va - ROUNDDOWN(va, BY2PG);
-	u_long size = 0;	
-	
-	if (bin == NULL) return -1;
+    struct Page *p = NULL;
+    u_long i = 0;
+    int r;
+    u_long offset = va - ROUNDDOWN(va, BY2PG);
 
-	/* Step 1: load all content of bin into memory. */
+    /* Step 1: load all content of bin into memory. */
         /* Hint: You should alloc a new page. */
-	if (offset > 0) {
-		size = BY2PG - offset;
-		if (page_alloc(&p) < 0) return -E_NO_MEM;
-		p -> pp_ref++;
-		page_insert(env -> env_pgdir, p, va - offset, PTE_R);
-		bcopy((void *)bin, (void *)(page2kva(p) + offset), MIN(bin_size, size));	
-	}        
-	for (i = size; i < bin_size; i += BY2PG) {
-		if (page_alloc(&p) < 0) return -E_NO_MEM;
-		p -> pp_ref ++;
-		page_insert(env -> env_pgdir, p, va + i, PTE_R);
-		bcopy((void *)(bin + i), (void *)page2kva(p), MIN(bin_size - i, BY2PG));	
-	}
-	/* Step 2: alloc pages to reach `sgsize` when `bin_size` < `sgsize`.
+    if (offset) {
+        p = page_lookup(env -> env_pgdir, va, NULL);
+        if (p == NULL) {
+            if ((r = page_alloc(&p)) < 0) {
+                return r;
+            }
+            // p -> pp_ref++;
+            if ((r = page_insert(env -> env_pgdir, p, va + i, PTE_R)) < 0) {
+                return r;
+            }
+        }
+        u_long size = MIN(bin_size - i, BY2PG - offset);
+        bcopy((void *)bin, (void *)(page2kva(p) + offset), size);
+        i += size;
+    }
+    while (i < bin_size) {
+        u_long size = MIN(bin_size - i, BY2PG);
+        if ((r = page_alloc(&p)) < 0) {
+            return r;
+        }
+        if ((r = page_insert(env -> env_pgdir, p, va + i, PTE_R)) < 0) {
+            return r;
+        }
+        bcopy((void *)(bin + i), (void *)page2kva(p), size);
+        i += size;
+    }
+        /* Step 2: alloc pages to reach `sgsize` when `bin_size` < `sgsize`.
      * hint: variable `i` has the value of `bin_size` now! */
-    while (i < sgsize) {
-		if (page_alloc(&p) < 0) return -E_NO_MEM;
-		p -> pp_ref ++;
-		page_insert(env -> env_pgdir, p, va + i, PTE_R);
-		i += BY2PG;	
+    //while (i < sgsize) {
+    //}
+    offset = i - ROUNDDOWN(i, BY2PG);
+    if (offset) {
+        p = page_lookup(env -> env_pgdir, va + i, NULL);
+        if (p == NULL) {
+            if ((r = page_alloc(&p)) < 0) {
+                return r;
+            }
+            if ((r = page_insert(env -> env_pgdir, p, va + i, PTE_R)) < 0) {
+                return r;
+            }
+        }
+        u_long size = MIN(sgsize - i, BY2PG - offset);
+        bzero((void *)(page2kva(p) + offset), size);
+    	i += size;
 	}
-	return 0;	
+    while (i < sgsize) {
+        u_long size = MIN(BY2PG, sgsize - i);
+        if ((r = page_alloc(&p)) < 0) {
+            return r;
+        }
+        p -> pp_ref++;
+        page_insert(env -> env_pgdir, p, va + i, PTE_R);
+        bzero((void *)page2kva(p), size);
+        i += size;
+    }
+    return 0;
 }
 /* Overview:
  *  Sets up the the initial stack and program binary for a user process.
