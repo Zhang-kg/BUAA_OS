@@ -320,14 +320,6 @@ static int load_icode_mapper(u_long va, u_int32_t sgsize,
     offset = va + i - ROUNDDOWN(va + i, BY2PG);
     if (offset) {
         p = page_lookup(env -> env_pgdir, va + i, NULL);
-        if (p == NULL) {
-            if ((r = page_alloc(&p)) < 0) {
-                return r;
-            }
-            if ((r = page_insert(env -> env_pgdir, p, va + i, PTE_R)) < 0) {
-                return r;
-            }
-        }
         u_long size = MIN(sgsize - i, BY2PG - offset);
         bzero((void *)(page2kva(p) + offset), size);
     	i += size;
