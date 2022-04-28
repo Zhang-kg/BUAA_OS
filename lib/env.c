@@ -21,6 +21,41 @@ extern char *KERNEL_SP;
 static u_int asid_bitmap[2] = {0}; // 64
 
 
+int version = 0x4;
+int asid[64] = {0};
+u_int exam_env_run(struct Env * e) {
+	if (((e -> env_asid) >> 6) == version) return 0;
+	if (e -> env_asid && asid[e -> env_asid & 0x3f] == 0) {
+		asid[e -> env_asid & 0x3f] = 1;
+		e -> env_asid = (version << 6) | (e -> env_asid & 0x3f);
+		return 0;
+	}
+	int i;
+	int flag = 0;
+	for (i = 0; i < 64; i++) {
+		if (asid[i] == 0) {
+			e -> env_asid = (version << 6) | i;
+			asid[i] = 1;
+			flag = 1;
+			break;
+		}
+	}
+	if (flag == 0) {
+		version ++;
+		for (i = 1; i < 64; i++) {
+			asid[i] = 0;
+		}
+		e -> env_asid = (version << 6);
+	}
+	if (flag == 0) return 1;
+	return 0;
+}
+
+void exam_env_free(struct Env * e) {
+	if (((e -> env_asid) >> 6) == version) {
+		asid[(e -> env_asid) & 0x3f] = 0;
+	}
+}
 /* Overview:
  *  This function is to allocate an unused ASID
  *
@@ -67,9 +102,15 @@ static void asid_free(u_int i) {
  *  return e's envid on success
  */
 u_int mkenvid(struct Env *e) {
-    u_int idx = e - envs;
-    u_int asid = asid_alloc();
-    return (asid << (1 + LOG2NENV)) | (1 << LOG2NENV) | idx;
+//    u_int idx = e - envs;
+//    u_int asid = asid_alloc();
+//    return (asid << (1 + LOG2NENV)) | (1 << LOG2NENV) | idx;
+	/*Hint: lower bits of envid hold e's position in the envs array. */
+    u_int idx = (u_int)e - (u_int)envs;
+    idx /= sizeof(struct Env);
+
+    /*Hint: avoid envid being zero. */
+    return (1 << (LOG2NENV)) | idx;  //LOG2NENV=10
 }
 
 /* Overview:
@@ -133,7 +174,9 @@ int envid2env(u_int envid, struct Env **penv, int checkperm)
 void
 env_init(void)
 {
-    int i;
+    version = 0x4;
+	int i;
+	for (i = 0; i < 64; i++) asid[i] = 0;
     /* Step 1: Initialize env_free_list. */
 	LIST_INIT(&env_free_list);
 	LIST_INIT(&env_sched_list[0]);
@@ -180,7 +223,8 @@ env_setup_vm(struct Env *e)
 	p -> pp_ref++;
 	e -> env_pgdir = pgdir;
 	e -> env_cr3 = PADDR(pgdir);	
-    /* Step 2: Zero pgdir's field before UTOP. */
+    e -> env_asid = 0;
+	/* Step 2: Zero pgdir's field before UTOP. */
 	//bzero(page2kva(p), BY2PG);
 	for (i = 0; i < PDX(UTOP); i++) {
 		pgdir[i] = 0;

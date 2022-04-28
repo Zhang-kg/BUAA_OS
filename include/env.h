@@ -28,6 +28,7 @@ struct Env {
 	u_int env_cr3;
 	LIST_ENTRY(Env) env_sched_link;
         u_int env_pri;
+	u_int env_asid;
 	// Lab 4 IPC
 	u_int env_ipc_value;            // data value sent to us 
 	u_int env_ipc_from;             // envid of the sender  
@@ -49,6 +50,8 @@ extern struct Env *envs;		// All environments
 extern struct Env *curenv;	        // the current env
 extern struct Env_list env_sched_list[2]; // runnable env list
 
+u_int exam_env_run(struct Env * e);
+void exam_env_free(struct Env * e);
 void env_init(void);
 int env_alloc(struct Env **e, u_int parent_id);
 void env_free(struct Env *);
