@@ -20,6 +20,60 @@ extern char *KERNEL_SP;
 
 static u_int asid_bitmap[2] = {0}; // 64
 
+int signal[10] = {0};
+struct Env * wait_queue[1024];
+int qhead = 0;
+int qtail = 0;
+void S_init(int s, int num) {
+	signal[s] = num;
+}
+
+int P(struct Env * e, int s) {
+//	int i;
+//	for (i = qhead; i < qtail; i ++) {
+//		if (wait_queue[i]->env_id == e -> env_id) return -1;
+//	}
+	if (e -> status == 1) return -1;
+	if (signal[s] > 0) {
+		signal[s]--;
+		e -> status = 2;
+	} else if (signal[s] == 0) {
+		wait_queue[qtail] = e;
+		e -> status = 1;
+		qtail = (qtail + 1) % 1024;
+	}
+	return 0;
+}
+
+int V(struct Env * e, int s) {
+//	int i;
+//	for (i = qhead; i < qtail; i ++) {
+//		if (wait_queue[i]->env_id == e -> env_id) return -1;
+//	}
+	if (e -> status == 1) return -1;
+	if (qhead != qtail) {
+		wait_queue[qhead] -> status = 2;
+		e -> status = 3;
+		qhead = (qhead + 1) % 1024;
+	} else {
+		signal[s]++;
+		e -> status = 3;
+	}
+	return 0;
+}
+
+int get_status(struct Env * e) {
+	return e -> status;
+}
+
+int my_env_create() {
+	struct Env * e;
+	int r;
+	if (r = env_alloc(&e, 0)) return -1;
+	e -> status = 3;
+	return e -> env_id;
+}
+
 
 /* Overview:
  *  This function is to allocate an unused ASID
