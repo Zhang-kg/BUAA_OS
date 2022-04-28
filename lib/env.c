@@ -24,6 +24,7 @@ int signal[10] = {0};
 struct Env * wait_queue[1024];
 int qhead = 0;
 int qtail = 0;
+struct Env_list env_wait_queue;
 void S_init(int s, int num) {
 	signal[s] = num;
 }
@@ -38,9 +39,10 @@ int P(struct Env * e, int s) {
 		signal[s]--;
 		e -> status = 2;
 	} else if (signal[s] == 0) {
-		wait_queue[qtail] = e;
+		//wait_queue[qtail] = e;
 		e -> status = 1;
-		qtail = (qtail + 1) % 1024;
+		LIST_INSERT_TAIL(&env_wait_queue, e, env_link);
+		//qtail = (qtail + 1) % 1024;
 	}
 	return 0;
 }
@@ -51,12 +53,21 @@ int V(struct Env * e, int s) {
 //		if (wait_queue[i]->env_id == e -> env_id) return -1;
 //	}
 	if (e -> status == 1) return -1;
-	if (qhead != qtail) {
-		wait_queue[qhead] -> status = 2;
-		e -> status = 3;
-		qhead = (qhead + 1) % 1024;
-	} else {
+	//if (qhead != qtail) {
+	//	wait_queue[qhead] -> status = 2;
+	//	e -> status = 3;
+	//	qhead = (qhead + 1) % 1024;
+	//} else {
+	//	signal[s]++;
+	//	e -> status = 3;
+	//}
+	if (LIST_EMPTY(&env_wait_queue)) {
 		signal[s]++;
+		e -> status = 3;
+	} else {
+		struct Env * nowPop = LIST_FIRST(&env_wait_queue);
+		LIST_REMOVE(nowPop, env_link);
+		nowPop -> status = 2;
 		e -> status = 3;
 	}
 	return 0;
@@ -190,6 +201,7 @@ env_init(void)
     int i;
     /* Step 1: Initialize env_free_list. */
 	LIST_INIT(&env_free_list);
+	LIST_INIT(&env_wait_queue);
 	LIST_INIT(&env_sched_list[0]);
 	LIST_INIT(&env_sched_list[1]);
     /* Step 2: Traverse the elements of 'envs' array,
