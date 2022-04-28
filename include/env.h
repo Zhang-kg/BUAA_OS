@@ -29,6 +29,7 @@ struct Env {
 	LIST_ENTRY(Env) env_sched_link;
         u_int env_pri;
 	int status;
+	int has[3];
 	// Lab 4 IPC
 	u_int env_ipc_value;            // data value sent to us 
 	u_int env_ipc_from;             // envid of the sender  

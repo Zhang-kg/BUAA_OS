@@ -31,6 +31,7 @@
 //	while(1);
 //	panic("init.c:\tend of mips_init() reached!");
 //}
+extern int signal[10];
 void pv_check() {
 	S_init(1, 1);
 	S_init(2, 1);
@@ -48,7 +49,8 @@ void pv_check() {
 	printf("%d\n", P(e1, 2));
 	printf("%d\n", V(e1, 1));
 	printf("%d\n", V(e1, 2));
-	printf("envid: %d, status: %d\n", e1->env_id, get_status(e1));
+	printf("envid: %d, status: %d\n", e2->env_id, get_status(e2));
+	printf("%d %d", signal[1], signal[2]);
 }
 
 void mips_init()

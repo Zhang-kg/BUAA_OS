@@ -32,6 +32,7 @@ int P(struct Env * e, int s) {
 	if (signal[s] > 0) {
 		signal[s]--;
 		e -> status = 2;
+		e -> has[s] = 1;
 	} else if (signal[s] == 0) {
 //		wait_queue[qtail] = e;
 		if (s == 1)
@@ -61,22 +62,32 @@ int V(struct Env * e, int s) {
 	if (s == 1) {
 		if (LIST_EMPTY(&env_wait_queue1)) {
 			signal[s]++;
-			e -> status = 3;
+			e -> has[1] = 0;
+			if (e -> has[2]) e -> status = 2;
+			else e -> status = 3;
 		} else {
 			struct Env * nowPop = LIST_FIRST(&env_wait_queue1);
 			LIST_REMOVE(nowPop, env_link);
 			nowPop -> status = 2;
-			e -> status = 3;
+			nowPop -> has[1] = 1;
+			e -> has[1] = 0;
+			if (e -> has[2]) e -> status = 2;
+			else e -> status = 3;
 		}
 	} else if (s == 2) {
 		if (LIST_EMPTY(&env_wait_queue2)) {
 			signal[s]++;
-			e -> status = 3;
+			e -> has[2] = 0;
+			if (e -> has[1]) e -> status = 2;
+			else e -> status = 3;
 		} else {
 			struct Env * nowPop = LIST_FIRST(&env_wait_queue2);
 			LIST_REMOVE(nowPop, env_link);
 			nowPop -> status = 2;
-			e -> status = 3;
+			nowPop -> has[2] = 1;
+			e -> has[2] = 0;
+			if (e -> has[1]) e -> status = 2;
+			else e -> status = 3;
 		}
 	}
 	
@@ -92,6 +103,8 @@ int my_env_create() {
 	int r;
 	if (r = env_alloc(&e, 0)) return -1;
 	e -> status = 3;
+	e -> has[1] = 0;
+	e -> has[2] = 0;
 	return e -> env_id;
 }
 
