@@ -85,7 +85,7 @@ static void *alloc(u_int n, u_int align, int clear)
 static Pte *boot_pgdir_walk(Pde *pgdir, u_long va, int create)
 {
 	Pde * pgdir_entry = pgdir + PDX(va);
-	if ((*pgdir_entry & PTE_V) == 0) {
+	if (((*pgdir_entry) & PTE_V) == 0) {
 		if (create) {
 			*pgdir_entry = PADDR(alloc(BY2PG, BY2PG, 1));
 			*pgdir_entry = (*pgdir_entry) | PTE_V | PTE_R;

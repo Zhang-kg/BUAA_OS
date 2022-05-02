@@ -467,7 +467,6 @@ env_destroy(struct Env *e)
 {
     /* Hint: free e. */
     env_free(e);
-
     /* Hint: schedule to run a new environment. */
     if (curenv == e) {
         curenv = NULL;
