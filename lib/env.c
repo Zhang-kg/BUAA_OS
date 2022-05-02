@@ -504,7 +504,7 @@ env_run(struct Env *e)
 	if (curenv != NULL) {
         struct Trapframe * old;
         old = (struct Trapframe *)(TIMESTACK - sizeof(struct Trapframe));
-        bcopy((void *)old, (void *)(&(e -> env_tf)), sizeof(struct Trapframe));
+        bcopy((void *)old, (void *)(&(curenv -> env_tf)), sizeof(struct Trapframe));
         curenv -> env_tf.pc = curenv -> env_tf.cp0_epc;
     }
 
@@ -648,7 +648,6 @@ void load_icode_check() {
     //printf("2----------------------------------------------\n");
 	printf("text & data segment load right!\n");
     /* bss        : 0x00409aac - 0x0040aab4 left closed and right open interval */
-    printf("%x", *((int *)KADDR(PTE_ADDR(*pte)) + 0x2b7));
 	assert(*((int *)KADDR(PTE_ADDR(*pte)) + 0x2b7) == 0x00000000);
     assert(*((int *)KADDR(PTE_ADDR(*pte)) + 1023) == 0x00000000);
     assert(pgdir_walk(e->env_pgdir, 0x0040a000, 0, &pte) == 0);

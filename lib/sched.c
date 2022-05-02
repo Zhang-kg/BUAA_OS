@@ -56,24 +56,43 @@ void sched_yield(void)
 //	if (ee != NULL)
 //		env_run(ee);
 	//LIST_REMOVE(ee, env_link);
-	static struct Env * e = NULL;
-	if (count == 0 || e == NULL || e -> env_status != ENV_RUNNABLE) {
-		if (e != NULL) {
-			LIST_REMOVE(e, env_sched_link);
-			if (e -> env_status != ENV_FREE) LIST_INSERT_TAIL(&env_sched_list[1-point], e, env_sched_link);
-		}
-		if (LIST_EMPTY(&env_sched_list[point])) {
-			point = 1 - point;
-		}
-		LIST_FOREACH(e, &env_sched_list[point], env_sched_link) {
-			if (e -> env_status == ENV_RUNNABLE) {
-				count = e -> env_pri;
-				break;
-			}
-		}
-	}
-	count--;
-	env_run(e);
 
-//env_run(LIST_FIRST(env_sched_list));
+//	static struct Env * e = NULL;
+//	if (count == 0 || e == NULL || e -> env_status != ENV_RUNNABLE) {
+//		if (e != NULL) {
+//			LIST_REMOVE(e, env_sched_link);
+//			if (e -> env_status != ENV_FREE) LIST_INSERT_TAIL(&env_sched_list[1-point], e, env_sched_link);
+//		}
+//		if (LIST_EMPTY(&env_sched_list[point])) {
+//			point = 1 - point;
+//		}
+//		LIST_FOREACH(e, &env_sched_list[point], env_sched_link) {
+//			if (e -> env_status == ENV_RUNNABLE) {
+//				count = e -> env_pri;
+//				break;
+//			}
+//		}
+//	}
+//	count--;
+//	env_run(e);
+	static struct Env* e = NULL;
+	if (count == 0 || e == NULL || e->env_status != ENV_RUNNABLE) {
+		if (e != NULL) {
+            LIST_REMOVE(e, env_sched_link);
+            LIST_INSERT_HEAD(&env_sched_list[1 - point], e, env_sched_link);
+        }
+        if (LIST_EMPTY(&env_sched_list[point])) {
+            point = 1 - point;
+        }
+        LIST_FOREACH(e, &env_sched_list[point], env_sched_link) {
+            if (e->env_status == ENV_RUNNABLE) {
+                count = e->env_pri;
+                break;
+            }
+        }
+    }
+	if (e != NULL) {
+        count--;
+        env_run(e);
+    }
 }

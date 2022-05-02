@@ -273,7 +273,7 @@ int pgdir_walk(Pde *pgdir, u_long va, int create, Pte **ppte)
     int ret;
     
     // check whether the page table exists
-    if ((*pgdir_entry & PTE_V) == 0) {
+    if (((*pgdir_entry) & PTE_V) == 0) {
         if (create) {
             if ((ret = page_alloc(&page)) < 0) return ret;
             *pgdir_entry = (page2pa(page)) | PTE_V | PTE_R;
@@ -313,7 +313,7 @@ int page_insert(Pde *pgdir, struct Page *pp, u_long va, u_int perm)
 
     // Step 0. check whether `va` is already mapping to `pa`
     pgdir_walk(pgdir, va, 0 /* for check */, &pgtable_entry);
-    if (pgtable_entry != 0 && (*pgtable_entry & PTE_V) != 0) {
+    if (pgtable_entry != 0 && ((*pgtable_entry) & PTE_V) != 0) {
         // check whether `va` is mapping to another physical frame
         if (pa2page(*pgtable_entry) != pp) {
             page_remove(pgdir, va); // unmap it!
@@ -351,7 +351,7 @@ struct Page *page_lookup(Pde *pgdir, u_long va, Pte **ppte)
 	if (pte == 0) {
 		return 0;
 	}
-	if ((*pte & PTE_V) == 0) {
+	if (((*pte) & PTE_V) == 0) {
 		return 0;    //the page is not in memory.
 	}
 
