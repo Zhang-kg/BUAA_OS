@@ -284,47 +284,31 @@ static int load_icode_mapper(u_long va, u_int32_t sgsize,
     u_long i = 0;
     int r;
     u_long offset = va - ROUNDDOWN(va, BY2PG);
-
-    /* Step 1: load all content of bin into memory. */
-        /* Hint: You should alloc a new page. */
     if (offset) {
         p = page_lookup(env -> env_pgdir, va, NULL);
         if (p == NULL) {
             if ((r = page_alloc(&p)) < 0) {
                 return r;
             }
-            // p -> pp_ref++;
             if ((r = page_insert(env -> env_pgdir, p, va + i, PTE_R)) < 0) {
                 return r;
             }
         }
-        u_long size = MIN(bin_size - i, BY2PG - offset);
+        u_long size = MIN(bin_size, BY2PG - offset);
         bcopy((void *)bin, (void *)(page2kva(p) + offset), size);
         i += size;
     }
-    while (i < bin_size) {
-        u_long size = MIN(bin_size - i, BY2PG);
-        if ((r = page_alloc(&p)) < 0) {
-            return r;
-        }
-        if ((r = page_insert(env -> env_pgdir, p, va + i, PTE_R)) < 0) {
-            return r;
-        }
-        bcopy((void *)(bin + i), (void *)page2kva(p), size);
-        i += size;
-    }
-        /* Step 2: alloc pages to reach `sgsize` when `bin_size` < `sgsize`.
-     * hint: variable `i` has the value of `bin_size` now! */
-    //while (i < sgsize) {
-    //}
-    offset = va + i - ROUNDDOWN(va + i, BY2PG);
-    if (offset) {
-        p = page_lookup(env -> env_pgdir, va + i, NULL);
-        u_long size = MIN(sgsize - i, BY2PG - offset);
-        bzero((void *)(page2kva(p) + offset), size);
-    	i += size;
+    for (; i < bin_size; i += BY2PG) {
+		if ((r = page_alloc(&p)) < 0) {
+			return r;
+		}
+		if ((r = page_insert(env -> env_pgdir, p, va + i, PTE_R)) < 0) {
+			return r;
+		}
+		u_long size = MIN(bin_size - i, BY2PG);
+		bcopy((void *)(bin + i), (void *)(page2kva(p)), size);
 	}
-    while (i < sgsize) {
+	while (i < sgsize) {
         u_long size = MIN(BY2PG, sgsize - i);
         if ((r = page_alloc(&p)) < 0) {
             return r;
@@ -504,8 +488,9 @@ env_run(struct Env *e)
 	if (curenv != NULL) {
         struct Trapframe * old;
         old = (struct Trapframe *)(TIMESTACK - sizeof(struct Trapframe));
-        bcopy((void *)old, (void *)(&(curenv -> env_tf)), sizeof(struct Trapframe));
-        curenv -> env_tf.pc = curenv -> env_tf.cp0_epc;
+        //bcopy((void *)old, (void *)(&(curenv -> env_tf)), sizeof(struct Trapframe));
+        curenv->env_tf = *old;
+		curenv -> env_tf.pc = curenv -> env_tf.cp0_epc;
     }
 
     /* Step 2: Set 'curenv' to the new environment. */
