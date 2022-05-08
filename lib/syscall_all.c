@@ -329,6 +329,11 @@ void sys_panic(int sysno, char *msg)
 /*** exercise 4.7 ***/
 void sys_ipc_recv(int sysno, u_int dstva)
 {
+	if (dstva != NULL && dstva >= UTOP) return;
+    curenv -> env_ipc_recving = 1;
+    curenv -> env_ipc_dstva = dstva;
+    curenv -> env_status = ENV_NOT_RUNNABLE;
+    sys_yield();
 }
 
 /* Overview:
@@ -356,6 +361,12 @@ int sys_ipc_can_send(int sysno, u_int envid, u_int value, u_int srcva,
 	int r;
 	struct Env *e;
 	struct Page *p;
-
+	if (srcva >= UTOP) return -E_IPC_NOT_RECV;
+	if ((r = envid2env(envid, &e, 0)) < 0) return -E_IPC_NOT_RECV;
+    if (e -> env_ipc_recving != 1) return -E_IPC_NOT_RECV;
+    e -> env_ipc_recving = 0;
+    e -> env_ipc_from = curenv -> env_id;
+    e -> env_ipc_value = value;
+    e -> env_status = ENV_RUNNABLE;
 	return 0;
 }
