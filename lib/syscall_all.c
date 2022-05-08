@@ -153,7 +153,7 @@ int sys_mem_alloc(int sysno, u_int envid, u_int va, u_int perm)
     if (va >= UTOP) return -E_INVAL;
     	
     // page alloc and map
-    if ((ret = envid2env(envid, &env, 1)) < 0) return ret;
+    if ((ret = envid2env(envid, &env, 0)) < 0) return ret;
     if ((ret = page_alloc(&ppage)) < 0) return ret;
     if ((ret = page_insert(env -> env_pgdir, ppage, va, perm)) < 0) return ret;
   
@@ -197,8 +197,8 @@ int sys_mem_map(int sysno, u_int srcid, u_int srcva, u_int dstid, u_int dstva,
     if (perm & PTE_R) perm = perm ^ PTE_R;
     if (round_srcva >= UTOP || round_dstva >= UTOP) return -E_INVAL;
     // find env
-    if ((ret = envid2env(srcid, &srcenv, 1)) < 0) return ret;
-    if ((ret = envid2env(dstid, &dstenv, 1)) < 0) return ret;
+    if ((ret = envid2env(srcid, &srcenv, 0)) < 0) return ret;
+    if ((ret = envid2env(dstid, &dstenv, 0)) < 0) return ret;
     // find the page in srcenv
     ppage = page_lookup(srcenv -> env_pgdir, round_srcva, &ppte);
     if (ppage == 0) {
