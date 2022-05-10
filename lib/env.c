@@ -501,9 +501,9 @@ env_run(struct Env *e)
     /* Hint: if there is an environment running, 
      *   you should switch the context and save the registers. 
      *   You can imitate env_destroy() 's behaviors.*/
+	struct Trapframe *old;
+	old = (struct Trapframe *)(TIMESTACK - sizeof(struct Trapframe));
 	if (curenv != NULL) {
-        struct Trapframe * old;
-        old = (struct Trapframe *)(TIMESTACK - sizeof(struct Trapframe));
         bcopy((void *)old, (void *)(&(curenv -> env_tf)), sizeof(struct Trapframe));
         curenv -> env_tf.pc = curenv -> env_tf.cp0_epc;
     }
@@ -512,7 +512,7 @@ env_run(struct Env *e)
 	curenv = e;
 
     /* Step 3: Use lcontext() to switch to its address space. */
-	lcontext(e -> env_pgdir);
+	lcontext((int)e -> env_pgdir);
 
     /* Step 4: Use env_pop_tf() to restore the environment's
      *   environment   registers and return to user mode.
