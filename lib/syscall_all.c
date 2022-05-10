@@ -190,19 +190,37 @@ int sys_mem_map(int sysno, u_int srcid, u_int srcva, u_int dstid, u_int dstva,
 
 	ppage = NULL;
 	ret = 0;
+	if (ret = envid2env(srcid, &srcenv, 0)) {
+     	return ret;   
+    }//checkperm is 0
+    if (ret = envid2env(dstid, &dstenv, 0)) {
+     	return ret;   
+    }//checkperm is 0
+
 	round_srcva = ROUNDDOWN(srcva, BY2PG);
 	round_dstva = ROUNDDOWN(dstva, BY2PG);
 
+    //check the perm
+    if (!(perm & PTE_V)) {
+        return -E_INVAL;
+    }
+    //check the address
+    if (round_srcva >= UTOP || round_dstva >= UTOP) {
+        return -E_INVAL;
+    }
     //your code here
-    if (!(perm & PTE_V)) return -E_INVAL;
-    if (round_srcva >= UTOP || round_dstva >= UTOP) return -E_INVAL;
-    if ((ret = envid2env(srcid, &srcenv, 0)) < 0) return ret;
-    if ((ret = envid2env(dstid, &dstenv, 0)) < 0) return ret;
-    ppage = page_lookup(srcenv -> env_pgdir, round_srcva, &ppte);
-    if (ppage == 0) return -E_INVAL;
-    if ((perm & PTE_R) && !((*ppte) & PTE_R)) return -E_INVAL;
-    if ((ret = page_insert(dstenv -> env_pgdir, ppage, round_dstva, perm)) < 0) return ret;
-	return ret;
+	ppage = page_lookup(srcenv->env_pgdir, round_srcva, &ppte);
+	if (ppage == 0) {
+		return -1;
+	}
+ //   if (!((*ppte) & PTE_R) && (perm & PTE_R)) {
+   //     return -E_INVAL;//from non-writable to writable?
+   // }
+    if (ret = page_insert(dstenv->env_pgdir, ppage, round_dstva, perm)) {
+        return ret;
+    }
+
+	return 0;
 }
 
 /* Overview:
