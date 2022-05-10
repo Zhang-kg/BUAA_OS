@@ -339,7 +339,7 @@ void sys_panic(int sysno, char *msg)
 /*** exercise 4.7 ***/
 void sys_ipc_recv(int sysno, u_int dstva)
 {
-	if (dstva != NULL && dstva >= UTOP) return;
+	if (dstva >= UTOP) return;
     curenv -> env_ipc_recving = 1;
     curenv -> env_ipc_dstva = dstva;
     curenv -> env_status = ENV_NOT_RUNNABLE;
