@@ -157,7 +157,6 @@ int sys_mem_alloc(int sysno, u_int envid, u_int va, u_int perm)
     	
     // page alloc and map
     if ((ret = envid2env(envid, &env, 1)) < 0) return ret;
-    if ((ret = page_alloc(&ppage)) < 0) return ret;
     if ((ret = page_insert(env -> env_pgdir, ppage, va, perm)) < 0) return ret;
   
     // Pose-Condition
