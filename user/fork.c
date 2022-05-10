@@ -181,11 +181,14 @@ fork(void)
 		return 0;
 	}
 	//1
-	for (i = 0; i < VPN(USTACKTOP); i++) {
-        if (((*vpd)[i >> 10]) && ((*vpt)[i])) {
-            duppage(newenvid, i);
-        }
-    }
+	for (i = 0; i < UTOP -  2 * BY2PG; i += BY2PG)
+	{
+		if ((((Pde *)(*vpd))[i >> PDSHIFT] & PTE_V) && (((Pte *)(*vpt))[i >> PGSHIFT] & PTE_V))
+		{
+			//writef("%x\n",(*vpt)[VPN(i)]);
+			duppage(newenvid, VPN(i));
+		}
+	}
 	//2
 	if (syscall_mem_alloc(newenvid, UXSTACKTOP - BY2PG, PTE_V | PTE_R) < 0) {
         writef("Error at fork.c/fork. syscall_mem_alloc for Son_env failed\n");
