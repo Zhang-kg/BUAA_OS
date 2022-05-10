@@ -14,9 +14,9 @@ void mips_init() {
 
 	env_init();
 
-	ENV_CREATE(user_tltest);
+	//ENV_CREATE(user_tltest);
 	//ENV_CREATE(user_fktest);
-	// ENV_CREATE(user_pingpong);
+	 ENV_CREATE(user_pingpong);
 	//ENV_CREATE_PRIORITY(user_A, 2);
 	//ENV_CREATE_PRIORITY(user_B, 1);
 	trap_init();
