@@ -137,9 +137,9 @@ duppage(u_int envid, u_int pn)
     perm = (*vpt)[pn] & 0xfff;
     if ((perm & PTE_R) && !(perm & PTE_LIBRARY)) {
         perm |= PTE_COW;
-        //syscall_mem_map(0, addr, envid, addr, perm);
+        syscall_mem_map(0, addr, envid, addr, perm);
         syscall_mem_map(0, addr, 0, addr, perm);
-		syscall_mem_map(0, addr, envid, addr, perm);
+		// syscall_mem_map(0, addr, envid, addr, perm);
     } else {
         syscall_mem_map(0, addr, envid, addr, perm);
     }
