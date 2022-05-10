@@ -89,25 +89,28 @@ pgfault(u_int va)
     tmp = (u_int *)USTACKTOP; // temporary place, cus invalid memory start from here!
     u_int perm = (*vpt)[VPN(va)] & 0xfff;
     if (!(perm & PTE_COW)) {
-        writef("fork.c:pgfault():\t va:%x\n",va);
-        return ;
+        user_panic("Error at fork.c/pgfault. syscall_mem_alloc failed\n");
+		return ;
     }
 	//map the new page at a temporary place
 	if ((ret = syscall_mem_alloc(0, tmp, PTE_V | PTE_R)) < 0) {
-        writef("fork.c:pgfault():\t va:%x\n",va);
-        return ;
+        //writef("fork.c:pgfault():\t va:%x\n",va);
+        user_panic("Error at fork.c/pgfault. syscall_mem_alloc failed\n");
+		return ;
     }
 	//copy the content
 	user_bcopy((void *)va, (void *)tmp, BY2PG);
 	//map the page on the appropriate place
 	if ((ret = syscall_mem_map(0, tmp, 0, va, PTE_V | PTE_R)) < 0) {
-        writef("fork.c:pgfault():\t va:%x\n",va);
-        return ;
+        //writef("fork.c:pgfault():\t va:%x\n",va);
+        user_panic("Error at fork.c/pgfault. syscall_mem_alloc failed\n");
+		return ;
     }
 	//unmap the temporary place
 	if ((ret = syscall_mem_unmap(0, tmp)) < 0) {
-        writef("fork.c:pgfault():\t va:%x\n",va);
-        return ;
+        //writef("fork.c:pgfault():\t va:%x\n",va);
+        user_panic("Error at fork.c/pgfault. syscall_mem_alloc failed\n");
+		return ;
     }
 }
 
