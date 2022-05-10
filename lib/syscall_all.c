@@ -156,7 +156,8 @@ int sys_mem_alloc(int sysno, u_int envid, u_int va, u_int perm)
     if (va >= UTOP) return -E_INVAL;
     	
     // page alloc and map
-    if ((ret = envid2env(envid, &env, 1)) < 0) return ret;
+    if ((ret = page_alloc(&ppage)) < 0) return ret;
+	if ((ret = envid2env(envid, &env, 1)) < 0) return ret;
     if ((ret = page_insert(env -> env_pgdir, ppage, va, perm)) < 0) return ret;
   
     // Pose-Condition
@@ -369,13 +370,12 @@ int sys_ipc_can_send(int sysno, u_int envid, u_int value, u_int srcva,
 	int r;
     struct Env *e;
     struct Page *p;
-    Pte * pte;
     if (srcva >= UTOP) return -E_IPC_NOT_RECV;
 	if ((r = envid2env(envid, &e, 0)) < 0) return -E_IPC_NOT_RECV;
     if (e -> env_ipc_recving != 1) return -E_IPC_NOT_RECV;
     e -> env_ipc_recving = 0;
     if (srcva != 0) {
-        if ((p = page_lookup(curenv -> env_pgdir, srcva, &pte)) == NULL) return -E_INVAL;
+        if ((p = page_lookup(curenv -> env_pgdir, srcva, NULL)) == NULL) return -E_INVAL;
         if ((r = page_insert(e -> env_pgdir, p, e -> env_ipc_dstva, perm)) < 0) return r;
     }
     e -> env_ipc_from = curenv -> env_id;
