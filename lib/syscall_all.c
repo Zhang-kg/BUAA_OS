@@ -194,19 +194,13 @@ int sys_mem_map(int sysno, u_int srcid, u_int srcva, u_int dstid, u_int dstva,
 	round_dstva = ROUNDDOWN(dstva, BY2PG);
 
     //your code here
-	// perm check
-    // if (perm & PTE_COW) return -E_INVAL;
-    if ((perm & PTE_V) == 0) return -E_INVAL;
-    // if (perm & PTE_R) perm = perm ^ PTE_R;
+    if (!(perm & PTE_V)) return -E_INVAL;
     if (round_srcva >= UTOP || round_dstva >= UTOP) return -E_INVAL;
-    // find env
     if ((ret = envid2env(srcid, &srcenv, 0)) < 0) return ret;
     if ((ret = envid2env(dstid, &dstenv, 0)) < 0) return ret;
-    // find the page in srcenv
     ppage = page_lookup(srcenv -> env_pgdir, round_srcva, &ppte);
     if (ppage == 0) return -E_INVAL;
     if ((perm & PTE_R) && !((*ppte) & PTE_R)) return -E_INVAL;
-	// insert to dstenv
     if ((ret = page_insert(dstenv -> env_pgdir, ppage, round_dstva, perm)) < 0) return ret;
 	return ret;
 }
