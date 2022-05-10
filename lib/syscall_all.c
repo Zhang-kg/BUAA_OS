@@ -282,7 +282,8 @@ int sys_set_env_status(int sysno, u_int envid, u_int status)
 	// Your code here.
 	struct Env *env;
 	int ret;
-	if (status != ENV_RUNNABLE && status != ENV_NOT_RUNNABLE && status != ENV_FREE) return -E_INVAL;
+	//if (status != ENV_RUNNABLE && status != ENV_NOT_RUNNABLE && status != ENV_FREE) return -E_INVAL;
+	if (status > 2 || status < 0) return -E_INVAL;
     if ((ret = envid2env(envid, &env, 0)) < 0) return -E_INVAL;
 	env -> env_status = status;
     if (env -> env_status == ENV_RUNNABLE) LIST_INSERT_HEAD(env_sched_list, env, env_sched_link);
