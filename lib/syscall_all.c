@@ -207,7 +207,7 @@ int sys_mem_map(int sysno, u_int srcid, u_int srcva, u_int dstid, u_int dstva,
     if (ppage == 0) return -E_INVAL;
     if ((perm & PTE_R) && !((*ppte) & PTE_R)) return -E_INVAL;
 	// insert to dstenv
-    if ((ret = page_insert(dstenv -> env_pgdir, ppage, dstva, perm)) < 0) return ret;
+    if ((ret = page_insert(dstenv -> env_pgdir, ppage, round_dstva, perm)) < 0) return ret;
 	return ret;
 }
 
