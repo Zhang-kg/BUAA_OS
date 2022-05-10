@@ -372,7 +372,7 @@ int sys_ipc_can_send(int sysno, u_int envid, u_int value, u_int srcva,
     struct Page *p;
     if (srcva >= UTOP) return -E_IPC_NOT_RECV;
 	if ((r = envid2env(envid, &e, 0)) < 0) return -E_IPC_NOT_RECV;
-    if (e -> env_ipc_recving != 1) return -E_IPC_NOT_RECV;
+    if (!e -> env_ipc_recving) return -E_IPC_NOT_RECV;
     e -> env_ipc_recving = 0;
     if (srcva != 0) {
         if ((p = page_lookup(curenv -> env_pgdir, srcva, NULL)) == NULL) return -E_INVAL;
