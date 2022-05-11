@@ -314,7 +314,6 @@ static int load_icode_mapper(u_long va, u_int32_t sgsize,
             return r;
         }
         if ((r = page_insert(env -> env_pgdir, p, va + i, PTE_R)) < 0) return r;
-        bzero((void *)page2kva(p), size);
         i += size;
     }
     return 0;
