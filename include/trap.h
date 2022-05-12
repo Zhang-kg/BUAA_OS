@@ -47,7 +47,7 @@ struct Trapframe { //lr:need to be modified(reference to linux pt_regs) TODO
 };
 void *set_except_vector(int n, void * addr);
 void trap_init();
-
+void handle_adel();
 #endif /* !__ASSEMBLER__ */
 /*
  * Stack layout for all exceptions:
