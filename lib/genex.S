@@ -165,6 +165,25 @@ NESTED(handle_adel, TF_SIZE, sp)
 	mfc0 v1, CP0_EPC
 	nop
 	lw v0, 0(v1)
+	li t0, 0
+	or t0, v0
+	srl t0, 26
+	li t1, 0x20
+	xor t2, t0, t1
+	beqz t2, loadb
+	nop
+	li t1, 0x21
+	xor t2, t0, t1
+	beqz t2, loadb
+	nop
+	li t1, 0x23
+	xor t2, t0, t1
+	beqz t2, loadb
+	nop
+	j fin
+	nop
+
+loadb:
 	li k0, 0x08000000
 	and k1, k0, v0
 	bnez k1, loadw
