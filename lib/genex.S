@@ -161,7 +161,7 @@ BUILD_HANDLER mod	page_fault_handler cli
 NESTED(handle_adel, TF_SIZE, sp)
 	nop
 	CLI
-	//SAVE_ALL
+	SAVE_ALL
 	mfc0 v1, CP0_EPC
 	nop
 	lw v0, 0(v1)
@@ -200,7 +200,7 @@ loadw:
 	j fin
 	nop
 fin:
-	//RESTORE_ALL
+	RESTORE_ALL
 	STI
 	mfc0 k0, CP0_EPC
 	nop
