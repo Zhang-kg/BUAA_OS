@@ -5,33 +5,57 @@
 #include <kclock.h>
 #include <trap.h>
 
+
+
 void mips_init()
 {
 	printf("init.c:\tmips_init() is called\n");
 	mips_detect_memory();
-
+	
 	mips_vm_init();
 	page_init();
-
+	
 	env_init();
-	env_check();
-	load_icode_check();
+    
+    // for lab3-2-exam local test
+    ENV_CREATE_PRIORITY(user_A, 2);
+    ENV_CREATE_PRIORITY(user_B, 1);	
+
+	trap_init();
+	kclock_init();
+	panic("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+	while(1);
+	panic("init.c:\tend of mips_init() reached!");
+}
+
+
+//void mips_init()
+//{
+//	printf("init.c:\tmips_init() is called\n");
+//	mips_detect_memory();
+//
+//	mips_vm_init();
+//	page_init();
+
+//	env_init();
+//	env_check();
+//	load_icode_check();
 
 	/*you can create some processes(env) here. in terms of binary code, please refer current directory/code_a.c
 	 * code_b.c*/
 	/*** exercise 3.9 ***/
 	/*you may want to create process by MACRO, please read env.h file, in which you will find it. this MACRO is very
 	 * interesting, have fun please*/
-	ENV_CREATE_PRIORITY(user_A, 2);
-	ENV_CREATE_PRIORITY(user_B, 1);
+//	ENV_CREATE_PRIORITY(user_A, 2);
+//	ENV_CREATE_PRIORITY(user_B, 1);
 
-	trap_init();
-	kclock_init();
+//	trap_init();
+//	kclock_init();
 	//env_run(envs);
-	panic("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
-	while(1);
-	panic("init.c:\tend of mips_init() reached!");
-}
+//	panic("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+//	while(1);
+//	panic("init.c:\tend of mips_init() reached!");
+//}
 
 void bcopy(const void *src, void *dst, size_t len)
 {
