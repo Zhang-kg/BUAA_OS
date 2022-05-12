@@ -160,6 +160,8 @@ BUILD_HANDLER mod	page_fault_handler cli
 
 NESTED(handle_adel, TF_SIZE, sp)
 	nop
+	li t0, 0
+	sb t0, 0xb5000100
 	CLI
 	SAVE_ALL
 	mfc0 v1, CP0_EPC
@@ -204,6 +206,8 @@ fin:
 	STI
 	mfc0 k0, CP0_EPC
 	nop
+	li t0, 1
+	sb t0, 0xb5000100
 	jr k0
 	rfe
 END(handle_adel)
