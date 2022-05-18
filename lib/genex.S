@@ -163,9 +163,14 @@ NESTED(handle_adel, TF_SIZE, sp)
 	li t0, 0
 	sb t0, 0xb5000100
 	CLI
-	SAVE_ALL
+	//SAVE_ALL
 	mfc0 v1, CP0_EPC
 	nop
+	mfc0 t0, CP0_STATUS
+	srl t0, 10
+	li t1, 0x4
+	and t0, t0, t1
+	bne t0, t1, fin
 	lw v0, 0(v1)
 	li t0, 0
 	or t0, v0
@@ -202,7 +207,7 @@ loadw:
 	j fin
 	nop
 fin:
-	RESTORE_ALL
+	//RESTORE_ALL
 	STI
 	mfc0 k0, CP0_EPC
 	nop
