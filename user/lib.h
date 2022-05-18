@@ -41,7 +41,7 @@ int fork(void);
 void user_bcopy(const void *src, void *dst, size_t len);
 void user_bzero(void *v, u_int n);
 //////////////////////////////////////////////////syscall_lib
-extern int msyscall(int, int, int, int, int, int);
+extern int msyscall(int, int, ...);
 
 void syscall_putchar(char ch);
 u_int syscall_getenvid(void);
@@ -56,7 +56,7 @@ int syscall_mem_unmap(u_int envid, u_int va);
 
 inline static int syscall_env_alloc(void)
 {
-    return msyscall(SYS_env_alloc, 0, 0, 0, 0, 0);
+    return msyscall(SYS_env_alloc, 5, 0, 0, 0, 0, 0);
 }
 
 int syscall_set_env_status(u_int envid, u_int status);
@@ -65,7 +65,7 @@ void syscall_panic(char *msg);
 int syscall_ipc_can_send(u_int envid, u_int value, u_int srcva, u_int perm);
 void syscall_ipc_recv(u_int dstva);
 int syscall_cgetc();
-
+int syscall_sum(int a, int b, int c, int d, int e, int f);
 // string.c
 int strlen(const char *s);
 char *strcpy(char *dst, const char *src);

@@ -379,3 +379,18 @@ int sys_ipc_can_send(int sysno, u_int envid, u_int value, u_int srcva,
 	e -> env_ipc_perm = perm;
 	return 0;
 }
+
+int sys_sum(int sysno, int a, int b, int c, int d, int e, int f) {
+	int ans = 0;
+	ans += a;
+	printf("ans + a = %d\n", ans);
+	ans += b;
+	printf("ans + b = %d\n", ans);
+	ans += c;
+	printf("ans + c = %d\n", ans);
+	ans += d;
+	ans += e;
+	ans += f;
+	printf("final ans = %d\n", ans);
+	return ans;
+}
