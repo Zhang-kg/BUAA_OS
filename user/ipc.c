@@ -14,18 +14,19 @@ extern struct Env *env;
 void
 ipc_send(u_int whom, u_int val, u_int srcva, u_int perm)
 {
-	int r;
+	syscall_ipc_can_send(whom, val, srcva, perm);
+//	int r;
 
-	while ((r = syscall_ipc_can_send(whom, val, srcva, perm)) == -E_IPC_NOT_RECV) {
-		syscall_yield();
+//	while ((r = syscall_ipc_can_send(whom, val, srcva, perm)) == -E_IPC_NOT_RECV) {
+//		syscall_yield();
 		//writef("QQ");
-	}
+//	}
 
-	if (r == 0) {
-		return;
-	}
+//	if (r == 0) {
+//		return;
+//	}
 
-	user_panic("error in ipc_send: %d", r);
+//	user_panic("error in ipc_send: %d", r);
 }
 
 // Receive a value.  Return the value and store the caller's envid

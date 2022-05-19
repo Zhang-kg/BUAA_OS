@@ -332,13 +332,41 @@ void sys_panic(int sysno, char *msg)
  * ENV_NOT_RUNNABLE, giving up cpu.
  */
 /*** exercise 4.7 ***/
+int set_queue = 0;
+struct wnode {
+	LIST_ENTRY(wnode) wnode_link;
+	u_int s_envid;
+	u_int r_envid;
+	u_int srcva;
+	u_int value;
+	u_int perm;	
+};
+LIST_HEAD(wait_node, wnode);
+struct wait_node recv_wait_list[1024];
 void sys_ipc_recv(int sysno, u_int dstva)
 {
+	if (set_queue == 0) {
+		set_queue = 1;
+		int i;
+		for (i = 0; i < 1024; i++) {
+			LIST_INIT(&recv_wait_list[i]);
+		}	
+	}
 	if (dstva >= UTOP) return;
     curenv -> env_ipc_recving = 1;
     curenv -> env_ipc_dstva = dstva;
-    curenv -> env_status = ENV_NOT_RUNNABLE;
-    sys_yield();
+	struct wnode * s_env;
+	if (!LIST_EMPTY(&recv_wait_list[ENVX(curenv -> env_id)])) {
+		s_env = LIST_FIRST(&recv_wait_list[ENVX(curenv -> env_id)]);
+		LIST_REMOVE(s_env, wnode_link);
+		struct Env * e;
+		envid2env(s_env -> s_envid, &e, 0);
+		e -> env_status = ENV_RUNNABLE;
+		receive(s_env -> r_envid, s_env -> value, s_env -> srcva, s_env -> perm);
+	} else {
+		curenv -> env_status = ENV_NOT_RUNNABLE;
+		sys_yield();
+	}
 }
 
 /* Overview:
@@ -359,15 +387,45 @@ void sys_ipc_recv(int sysno, u_int dstva)
  * Hint: the only function you need to call is envid2env.
  */
 /*** exercise 4.7 ***/
+struct wnode empty_node[1024];
+int arrayindex = 0;
 int sys_ipc_can_send(int sysno, u_int envid, u_int value, u_int srcva,
 					 u_int perm)
 {
+	if (set_queue == 0) {
+		set_queue = 1;
+		int i;
+		for (i = 0; i < 1024; i++)
+			LIST_INIT(&recv_wait_list[i]);
+	}
 	int r;
     struct Env *e;
     struct Page *p;
     if (srcva >= UTOP) return -E_IPC_NOT_RECV;
 	if ((r = envid2env(envid, &e, 0)) < 0) return -E_IPC_NOT_RECV;
-    if (!e -> env_ipc_recving) return -E_IPC_NOT_RECV;
+	if (e -> env_ipc_recving == 1) {
+		receive(envid, value, srcva, perm);
+	} else {
+		curenv -> env_status = ENV_NOT_RUNNABLE;
+		empty_node[arrayindex].perm = perm;
+		empty_node[arrayindex].r_envid = envid;
+		empty_node[arrayindex].s_envid = curenv -> env_id;
+		empty_node[arrayindex].srcva = srcva;
+		empty_node[arrayindex].value = value;
+		LIST_INSERT_TAIL(&recv_wait_list[ENVX(e -> env_id)], &empty_node[arrayindex], wnode_link);
+		sys_yield();
+	}
+	return 0;
+}
+
+void receive(u_int envid, u_int value, u_int srcva, u_int perm) {
+
+	int r;
+    struct Env *e;
+    struct Page *p;
+    if (srcva >= UTOP) return -E_IPC_NOT_RECV;
+	if ((r = envid2env(envid, &e, 0)) < 0) return -E_IPC_NOT_RECV;
+    //if (!e -> env_ipc_recving) return -E_IPC_NOT_RECV;
     e -> env_ipc_recving = 0;
     if (srcva != 0) {
         if ((p = page_lookup(curenv -> env_pgdir, srcva, NULL)) == NULL) return -E_INVAL;
@@ -377,5 +435,5 @@ int sys_ipc_can_send(int sysno, u_int envid, u_int value, u_int srcva,
     e -> env_ipc_value = value;
     e -> env_status = ENV_RUNNABLE;
 	e -> env_ipc_perm = perm;
-	return 0;
+
 }
