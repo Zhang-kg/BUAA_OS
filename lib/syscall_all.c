@@ -280,7 +280,10 @@ int sys_set_env_status(int sysno, u_int envid, u_int status)
 	if (status > 2 || status < 0) return -E_INVAL;
     if ((ret = envid2env(envid, &env, 0)) < 0) return -E_INVAL;
 	env -> env_status = status;
-    if (env -> env_status == ENV_RUNNABLE) LIST_INSERT_HEAD(env_sched_list, env, env_sched_link);
+	LIST_FOREACH(env, env_sched_list, env_sched_link) {
+		printf("%d ", env->env_id);
+	}
+	printf("\n");
 	return 0;
 	//	panic("sys_env_set_status not implemented");
 }

@@ -20,17 +20,14 @@ void sched_yield(void)
 	if (count == 0 || e == NULL || e -> env_status != ENV_RUNNABLE) {
 		if (e != NULL) {
 			LIST_REMOVE(e, env_sched_link);
-			if (e -> env_status != ENV_FREE)
-				LIST_INSERT_TAIL(&env_sched_list[1 - point], e, env_sched_link);
+			LIST_INSERT_TAIL(&env_sched_list[1 - point], e, env_sched_link);
 		}
 		while (1) {
 			while (LIST_EMPTY(&env_sched_list[point])) {
 				point = 1 - point;
 			}
 			e = LIST_FIRST(&env_sched_list[point]);
-			if (e -> env_status == ENV_FREE) {
-				LIST_REMOVE(e, env_sched_link);
-			} else if (e -> env_status == ENV_NOT_RUNNABLE) {
+			if (e -> env_status != ENV_RUNNABLE) {
 				LIST_REMOVE(e, env_sched_link);
 				LIST_INSERT_TAIL(&env_sched_list[1 - point], e, env_sched_link);
 			} else {

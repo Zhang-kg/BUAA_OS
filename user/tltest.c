@@ -7,7 +7,12 @@ void umain() {
 //    );
 //    *(int *) KERNBASE = 0;
 //    writef("My mission completed!\n");
-	int ans = syscall_sum(1, 2, 3, 4, 5, 6);
-	writef("umain ans = %d", ans);
-	for(;;);
+//	int ans = syscall_sum(1, 2, 3, 4, 5, 6);
+//	writef("umain ans = %d", ans);
+//	for(;;);
+	int id = syscall_getenvid();
+	writef("%d\n",id);    
+	syscall_set_env_status(id, ENV_NOT_RUNNABLE);
+    syscall_set_env_status(id, ENV_RUNNABLE);
+    for(;;);
 }
