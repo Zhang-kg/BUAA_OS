@@ -11,7 +11,7 @@ void umain() {
     int *buf = (int *) 0x60000000;
     syscall_mem_alloc(0, buf, PTE_V | PTE_R);
     buf[0] = sum;
-
+	writef("buf0000 %d\n", buf[0]);
     for (i = 0; i < 3; ++i)
         ipc_send(whos[i], i, buf, PTE_V | PTE_R);
     while (1);

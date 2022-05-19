@@ -362,7 +362,8 @@ void sys_ipc_recv(int sysno, u_int dstva)
 		struct Env * e;
 		envid2env(s_env -> s_envid, &e, 0);
 		e -> env_status = ENV_RUNNABLE;
-		receive(s_env -> r_envid, s_env -> s_envid, s_env -> value, s_env -> srcva, s_env -> perm);
+		receive(s_env -> r_envid, s_env -> s_envid, e -> env_pgdir, s_env -> value, s_env -> srcva, s_env -> perm);
+		return;
 	} else {
 		curenv -> env_status = ENV_NOT_RUNNABLE;
 		sys_yield();
@@ -387,7 +388,7 @@ void sys_ipc_recv(int sysno, u_int dstva)
  * Hint: the only function you need to call is envid2env.
  */
 /*** exercise 4.7 ***/
-struct wnode empty_node[1024];
+struct wnode empty_node[200];
 int arrayindex = 0;
 int sys_ipc_can_send(int sysno, u_int envid, u_int value, u_int srcva,
 					 u_int perm)
@@ -404,7 +405,7 @@ int sys_ipc_can_send(int sysno, u_int envid, u_int value, u_int srcva,
     if (srcva >= UTOP) return -E_IPC_NOT_RECV;
 	if ((r = envid2env(envid, &e, 0)) < 0) return -E_IPC_NOT_RECV;
 	if (e -> env_ipc_recving == 1) {
-		receive(envid, curenv -> env_id, value, srcva, perm);
+		receive(envid, curenv -> env_id, curenv -> env_pgdir, value, srcva, perm);
 	} else {
 		curenv -> env_status = ENV_NOT_RUNNABLE;
 		empty_node[arrayindex].perm = perm;
@@ -419,7 +420,7 @@ int sys_ipc_can_send(int sysno, u_int envid, u_int value, u_int srcva,
 	return 0;
 }
 
-void receive(u_int envid, u_int s_id, u_int value, u_int srcva, u_int perm) {
+void receive(u_int envid, u_int s_id, Pde * pgdir, u_int value, u_int srcva, u_int perm) {
 
 	int r;
     struct Env *e;
@@ -429,7 +430,7 @@ void receive(u_int envid, u_int s_id, u_int value, u_int srcva, u_int perm) {
     //if (!e -> env_ipc_recving) return -E_IPC_NOT_RECV;
     e -> env_ipc_recving = 0;
     if (srcva != 0) {
-        if ((p = page_lookup(curenv -> env_pgdir, srcva, NULL)) == NULL) return -E_INVAL;
+        if ((p = page_lookup(pgdir, srcva, NULL)) == NULL) return -E_INVAL;
         if ((r = page_insert(e -> env_pgdir, p, e -> env_ipc_dstva, perm)) < 0) return r;
     }
     e -> env_ipc_from = s_id;
