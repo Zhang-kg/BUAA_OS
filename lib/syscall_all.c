@@ -362,7 +362,7 @@ void sys_ipc_recv(int sysno, u_int dstva)
 		struct Env * e;
 		envid2env(s_env -> s_envid, &e, 0);
 		e -> env_status = ENV_RUNNABLE;
-		receive(s_env -> r_envid, s_env -> value, s_env -> srcva, s_env -> perm);
+		receive(s_env -> r_envid, s_env -> s_envid, s_env -> value, s_env -> srcva, s_env -> perm);
 	} else {
 		curenv -> env_status = ENV_NOT_RUNNABLE;
 		sys_yield();
@@ -404,7 +404,7 @@ int sys_ipc_can_send(int sysno, u_int envid, u_int value, u_int srcva,
     if (srcva >= UTOP) return -E_IPC_NOT_RECV;
 	if ((r = envid2env(envid, &e, 0)) < 0) return -E_IPC_NOT_RECV;
 	if (e -> env_ipc_recving == 1) {
-		receive(envid, value, srcva, perm);
+		receive(envid, curenv -> env_id, value, srcva, perm);
 	} else {
 		curenv -> env_status = ENV_NOT_RUNNABLE;
 		empty_node[arrayindex].perm = perm;
@@ -413,12 +413,13 @@ int sys_ipc_can_send(int sysno, u_int envid, u_int value, u_int srcva,
 		empty_node[arrayindex].srcva = srcva;
 		empty_node[arrayindex].value = value;
 		LIST_INSERT_TAIL(&recv_wait_list[ENVX(e -> env_id)], &empty_node[arrayindex], wnode_link);
+		arrayindex++;
 		sys_yield();
 	}
 	return 0;
 }
 
-void receive(u_int envid, u_int value, u_int srcva, u_int perm) {
+void receive(u_int envid, u_int s_id, u_int value, u_int srcva, u_int perm) {
 
 	int r;
     struct Env *e;
@@ -431,7 +432,7 @@ void receive(u_int envid, u_int value, u_int srcva, u_int perm) {
         if ((p = page_lookup(curenv -> env_pgdir, srcva, NULL)) == NULL) return -E_INVAL;
         if ((r = page_insert(e -> env_pgdir, p, e -> env_ipc_dstva, perm)) < 0) return r;
     }
-    e -> env_ipc_from = curenv -> env_id;
+    e -> env_ipc_from = s_id;
     e -> env_ipc_value = value;
     e -> env_status = ENV_RUNNABLE;
 	e -> env_ipc_perm = perm;
