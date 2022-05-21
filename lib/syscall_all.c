@@ -407,7 +407,24 @@ int sys_ipc_can_send(int sysno, u_int envid, u_int value, u_int srcva,
  /*** exercise 5.1 ***/
 int sys_write_dev(int sysno, u_int va, u_int dev, u_int len)
 {
-        // Your code here
+	// Your code here
+	int offset = 0xA0000000;
+	int dev_cnt = 3;
+	int dev_start_addr[] = {0x10000000, 0x13000000, 0x15000000};
+	int dev_len[] = {0x20, 0x4200, 0x200};
+	int target_addr = dev + offset;
+	if (va >= ULIM) return -E_INVAL;
+	int i;
+	int flag = 0;
+	for (i = 0; i < dev_cnt; i++) {
+		if (target_addr >= dev_start_addr[i] && dev_start_addr[i] + dev_len[i] > target_addr + len - 1) {
+			flag = 1;
+			break;
+		}
+	}
+	if (!flag) return -E_INVAL;
+	bcopy((void *)(va), (void *)(dev + offset), len);
+	return 0;
 }
 
 /* Overview:
@@ -429,5 +446,21 @@ int sys_write_dev(int sysno, u_int va, u_int dev, u_int len)
  /*** exercise 5.1 ***/
 int sys_read_dev(int sysno, u_int va, u_int dev, u_int len)
 {
-        // Your code here
+	// Your code here
+	if (va >= ULIM) return -E_INVAL;
+	int offset = 0xA0000000;
+	int target_addr = dev + offset;
+	int dev_cnt = 3;
+	int dev_start_addr[] = {0x10000000, 0x13000000, 0x15000000};
+	int dev_len[] = {0x20, 0x4200, 0x200};
+	int i;
+	int flag = 0;
+	for (i = 0; i < dev_cnt; i++) {
+		if (target_addr >= dev_start_addr[i] && dev_start_addr[i] + dev_len[i] > target_addr + len - 1) {
+			flag = 1;
+			break;
+		}
+	}
+	if (!flag) return -E_INVAL;
+	bcopy((void *)(dev + offset), (void *)(va), len);
 }
