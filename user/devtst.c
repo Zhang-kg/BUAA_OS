@@ -11,6 +11,7 @@ void umain()
 	writef("console test, please input a string:\n");
 	while(1){
 		syscall_read_dev(&c, cons, 1);
+		writef("%c", c);
 		if(c == '\r')
 			break;
 		if(c != 0){
