@@ -417,7 +417,7 @@ int sys_write_dev(int sysno, u_int va, u_int dev, u_int len)
 	int i;
 	int flag = 0;
 	for (i = 0; i < dev_cnt; i++) {
-		if (target_addr >= dev_start_addr[i] && dev_start_addr[i] + dev_len[i] > target_addr + len - 1) {
+		if (dev_start_addr[i] <= dev && dev + len <= dev_start_addr[i] + dev_len[i]) {
 			flag = 1;
 			break;
 		}
