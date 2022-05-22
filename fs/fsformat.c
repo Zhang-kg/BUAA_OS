@@ -214,11 +214,24 @@ struct File *create_file(struct File *dirf) {
     // Your code here
     // Step1: According to different range of nblk, make classified discussion to
     //        calculate the correct block number.
-
-
+	if (!nblk) {
+        return (struct File *)(disk[make_link_block(dirf, nblk)].data);
+    }
+    if (nblk <= NDIRECT) {
+        bno = dirf -> f_direct[nblk];
+    } else {
+        bno = ((uint32_t *)(disk[dirf -> f_indirect].data))[nblk];
+    }
     // Step2: Find an unused pointer
-
-
+	dirblk = (struct File *)(disk[bno].data);
+    i = 0;
+    while (i < FILE2BLK) {
+        if (dirblk[i].f_name[0] == '\0') {
+            return &dirblk[i];
+        }
+        i++;
+    }
+    return (struct File *)(disk[make_link_block(dirf, nblk)].data);
 }
 
 // Write file to disk under specified dir.

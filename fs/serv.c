@@ -309,7 +309,6 @@ umain(void)
 	serve_init();
 	fs_init();
 	fs_test();
-
 	serve();
 }
 
