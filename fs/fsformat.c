@@ -218,9 +218,9 @@ struct File *create_file(struct File *dirf) {
         return (struct File *)(disk[make_link_block(dirf, nblk)].data);
     }
     if (nblk <= NDIRECT) {
-        bno = dirf -> f_direct[nblk];
+        bno = dirf -> f_direct[nblk - 1];
     } else {
-        bno = ((uint32_t *)(disk[dirf -> f_indirect].data))[nblk];
+        bno = ((u_int *)(disk[dirf -> f_indirect].data))[nblk - 1];
     }
     // Step2: Find an unused pointer
 	dirblk = (struct File *)(disk[bno].data);
