@@ -212,7 +212,7 @@ sfork(void)
 int make_shared(void* va) {
 	if (va >= UTOP) return -1;
 	int r;
-	va = ROUNDDOWN(va, BY2PG);
+	//va = ROUNDDOWN(va, BY2PG);
 	int pn = VPN(va);
 	u_int perm = (*vpt)[pn] & 0xfff;
 	if ((perm & PTE_V) && !(perm & PTE_R)) return -1;
