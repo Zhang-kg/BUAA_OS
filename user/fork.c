@@ -220,11 +220,10 @@ int make_shared(void* va) {
 		if ((r = syscall_mem_alloc(0, va, PTE_V | PTE_R | PTE_LIBRARY)) < 0) {
 			return -1;
 		}
-		return (*vpt)[pn] & 0xfffffc00;
 	} else if ((perm & PTE_V) && !(perm & PTE_COW)){
 		if (syscall_mem_map(0, va, 0, va, perm | PTE_LIBRARY) < 0) return -1;
 	} else {
 		return -1;
 	}
-	return (*vpt)[pn] & 0xfffffc00;
+	return (*vpt)[pn] & 0xfffffc00 + ULIM;
 }
