@@ -225,5 +225,5 @@ int make_shared(void* va) {
 	} else {
 		return -1;
 	}
-	return ((*vpt)[pn] & 0xfffffc00);
+	return ((*vpt)[pn] & 0xfffff000);
 }
