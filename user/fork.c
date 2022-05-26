@@ -215,19 +215,13 @@ int make_shared(void* va) {
 	va = ROUNDDOWN(va, BY2PG);
 	int pn = VPN(va);
 	u_int perm = (*vpt)[pn] & 0xfff;
-//	writef("%x %d\n", va, perm);
 	if ((perm & PTE_V) && !(perm & PTE_R)) return -1;
-//	writef("pppp\n");
-//	writef("point %d\n", perm & PTE_V);
 	if ((perm & PTE_V) == 0) {
-//		writef("in\n");
 		if ((r = syscall_mem_alloc(0, va, PTE_V | PTE_R | PTE_LIBRARY)) < 0) {
-			//writef("1\n");
 			return -1;
 		}
 	} else {
 		if (syscall_mem_map(0, va, 0, va, perm | PTE_LIBRARY) < 0) return -1;
 	}
-//	writef("pn");
 	return (*vpt)[pn] & 0xfffffc00;
 }
