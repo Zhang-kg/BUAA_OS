@@ -32,7 +32,8 @@ __attribute__((noreturn));
 
 #define user_panic(...) _user_panic(__FILE__, __LINE__, __VA_ARGS__)
 
-
+void kill(u_int envid, int sig);
+void signal(int sig, void (*handler)(int));
 /////////////////////////////////////////////////////fork spawn
 int spawn(char *prog, char **argv);
 int spawnl(char *prot, char *args, ...);
@@ -65,7 +66,8 @@ void syscall_panic(char *msg);
 int syscall_ipc_can_send(u_int envid, u_int value, u_int srcva, u_int perm);
 void syscall_ipc_recv(u_int dstva);
 int syscall_cgetc();
-
+void syscall_set_handler(int sig, void (*handler)(int));
+void syscall_set_child_handler(int newenvid);
 // string.c
 int strlen(const char *s);
 char *strcpy(char *dst, const char *src);

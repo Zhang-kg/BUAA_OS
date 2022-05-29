@@ -198,6 +198,7 @@ fork(void)
     }
 	//4
 	syscall_set_env_status(newenvid, ENV_RUNNABLE);
+	syscall_set_child_handler(newenvid);
 	return newenvid;
 }
 

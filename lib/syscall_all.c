@@ -379,3 +379,27 @@ int sys_ipc_can_send(int sysno, u_int envid, u_int value, u_int srcva,
 	e -> env_ipc_perm = perm;
 	return 0;
 }
+
+void* handler11[NENV];
+void* handler15[NENV];
+void* handler18[NENV];
+
+void sys_set_handler(int sig, void (*handler)(int)) {
+	int envx = ENVX(curenv -> env_id);
+	if (sig == 11) {
+		handler11[envx] = handler;
+	} else if (sig == 15) {
+		handler15[envx] = handler;
+	} else if (sig == 18) {
+		handler18[envx] = handler;
+	}
+}
+
+
+void sys_set_child_handler(int newenvid) {
+	int curenvx = ENVX(curenv -> env_id);
+	int chienvx = ENVX(newenvid);
+	handler11[chienvx] = handler11[curenvx];
+	handler15[chienvx] = handler15[curenvx];
+	handler18[chienvx] = handler18[curenvx];
+}

@@ -49,3 +49,10 @@ ipc_recv(u_int *whom, u_int dstva, u_int *perm)
 	return env->env_ipc_value;
 }
 
+void kill(u_int envid, int sig) {
+	
+}
+
+void signal(int sig, void (*handler)(int)) {
+	syscall_set_handler(sig, handler);
+}

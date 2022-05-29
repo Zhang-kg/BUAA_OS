@@ -87,3 +87,10 @@ syscall_cgetc()
 {
 	return msyscall(SYS_cgetc, 0, 0, 0, 0, 0);
 }
+void syscall_set_handler(int sig, void (*handler)(int)) {
+	msyscall(SYS_set_handler, sig, handler, 0, 0, 0);
+}
+
+void syscall_set_child_handler(int newenvid) {
+	msyscall(SYS_set_child_handler, newenvid, 0, 0, 0);
+}
