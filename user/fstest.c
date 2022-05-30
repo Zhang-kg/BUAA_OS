@@ -19,6 +19,7 @@ void umain()
         if ((n = read(fdnum, buf, 511)) < 0) {
                 user_panic("read /newmotd: %d", r);
         }
+		writef("buf is = %s\n", buf);
         if (strcmp(buf, diff_msg) != 0) {
                 user_panic("read returned wrong data");
         }
