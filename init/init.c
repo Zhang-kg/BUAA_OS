@@ -13,10 +13,11 @@ void mips_init() {
 	page_init();
 
 	env_init();
-
+	
+	ENV_CREATE(fs_extra);
 	//ENV_CREATE(user_devtst);
-	ENV_CREATE(user_fstest);
-	ENV_CREATE(fs_serv);
+	//ENV_CREATE(user_fstest);
+	//ENV_CREATE(fs_serv);
  
 	trap_init();
 	kclock_init();

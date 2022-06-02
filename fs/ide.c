@@ -202,6 +202,11 @@ int raid4_read(u_int blockno, void * dst) {
 			ddst[i] = checker[i];
 		}
 	}
+	if (invalid == 0) {
+		for (i = 0; i < 128; i++) {
+			if (checker[i] != 0) return -1;
+		}
+	}
 	origin_dst = (int *)dst;
 	if (va[5]) ide_read(5, blockno * 2 + 1, (void *)checker, 1);
 	for (i = 4; i < 8; i++) {
@@ -218,6 +223,11 @@ int raid4_read(u_int blockno, void * dst) {
 		int * ddst = origin_dst + (flag - 1) * 0x200;
 		for (i = 0; i < 128; i++) {
 			ddst[i] = checker[i];
+		}
+	}
+	if (invalid == 0) {
+		for (i = 0; i < 128; i++) {
+			if (checker[i] != 0) return -1;
 		}
 	}
 	return invalid;
