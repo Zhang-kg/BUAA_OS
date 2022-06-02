@@ -113,3 +113,36 @@ ide_write(u_int diskno, u_int secno, void *src, u_int nsecs)
 		// if error occur, then panic.
 	}
 }
+
+int time_read() {
+	int addr = 0x15000000;
+	int offset = 0x0010;
+	int time = 1;
+	syscall_write_dev(&time, addr, 4);
+	syscall_read_dev(&time, addr + offset, 4);
+	return time;
+}
+
+void raid0_write(u_int secno, void * src, u_int nsecs) {
+	int finalNo = secno + nsecs;
+	for (secno; secno < finalNo; secno++) {
+		if (secno % 2 == 1) {
+			ide_write(2, (secno - 1) / 2, src, 1);
+		} else {
+			ide_write(1, secno / 2, src, 1);
+		}
+		src += 0x200;
+	}
+}
+
+void raid0_read(u_int secno, void * dst, u_int nsecs) {
+	int finalNo = secno + nsecs;
+	for (secno; secno < finalNo; secno++) {
+		if (secno % 2 == 1) {
+			ide_read(2, (secno-1)/2, dst, 1);
+		} else {
+			ide_read(1, secno/2, dst, 1);
+		}
+		dst += 0x200;
+	}
+}
