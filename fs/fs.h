@@ -18,7 +18,9 @@
 /* ide.c */
 void ide_read(u_int diskno, u_int secno, void *dst, u_int nsecs);
 void ide_write(u_int diskno, u_int secno, void *src, u_int nsecs);
-
+int raid4_valid(u_int diskno);
+int raid4_write(u_int blokno, void * src);
+int raid4_read(u_int blockno, void * dst);
 /* fs.c */
 int file_open(char *path, struct File **pfile);
 int file_get_block(struct File *f, u_int blockno, void **pblk);

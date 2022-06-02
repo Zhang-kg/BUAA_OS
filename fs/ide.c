@@ -113,3 +113,112 @@ ide_write(u_int diskno, u_int secno, void *src, u_int nsecs)
 		// if error occur, then panic.
 	}
 }
+int raid4_valid(u_int diskno) {
+	u_int dev_addr = 0x13000000;
+	u_char status = 0;
+	u_char read_value = 0;
+	if (syscall_write_dev((u_int)&diskno, dev_addr + 0x10, 4) < 0) {
+		return 0;
+	}
+	u_int now_offset = 0;
+	if (syscall_write_dev(&now_offset, dev_addr, 4) < 0) {
+		return 0;
+	}
+	if (syscall_write_dev(&read_value, dev_addr + 0x20, 1) < 0) {
+		return 0;
+	}
+	if (syscall_read_dev((u_int)&status, dev_addr + 0x30, 1) < 0) {
+		return 0;
+	}
+	if (status == 0) {
+		return 0;
+	}
+	return 1;
+}
+
+int raid4_write(u_int blokno, void * src) {
+	int invalid = 0;
+	int i = 0;
+	int va[6];
+	for (i = 1; i <= 5; i++) {
+		va[i] = raid4_valid(i);
+		if (va[i] == 0) invalid++;
+	}
+	int checker[128];
+	int diskno = 0;
+	int secno = 0;
+	for (i = 0; i < 128; i++) checker[i] = 0;
+	for (i = 0; i < 4; i++) {
+		int j;
+		for (j = 0; j < 128; j++) checker[j] ^= ((int *)src)[j];
+		if (va[i + 1]) {
+			ide_write(i + 1, blokno * 2, src, 1);
+		}
+		src += 0x200;
+	}
+	if (va[5]) ide_write(5, blokno * 2, (void *)checker, 1);
+	for (i = 0; i < 128; i++) checker[i] = 0;
+	for (i = 4; i < 8; i++) {
+		int j;
+		for (j = 0; j < 128; j++) checker[j] ^= ((int *)src)[j];
+		if (va[i - 3]) {
+			ide_write(i - 3, blokno * 2 + 1, src, 1);
+		}
+		src += 0x200;
+	}
+	if (va[5]) ide_write(5, blokno * 2 + 1, (void *)checker, 1);
+	return invalid;
+}
+
+int raid4_read(u_int blockno, void * dst) {
+	int invalid = 0;
+	int va[6];
+	int i;
+	int flag = -1;
+	int * origin_dst = (int*)dst;
+	for (i = 1; i <= 5; i++) {
+		va[i] = raid4_valid(i);
+		if (va[i] == 0) {
+			invalid++;
+			flag = i;
+		}
+	}
+	if (invalid > 1) return invalid;
+	int checker[128];
+	if (va[5]) ide_read(5, blockno * 2, (void *)checker, 1);
+	for (i = 0; i < 4; i++) {
+		if (va[i + 1]) {
+			ide_read(i + 1, blockno * 2, dst, 1);
+			int j;
+			for (j = 0; j < 128; j++) {
+				checker[j] ^= ((int *)dst)[j];
+			}
+		}
+		dst += 0x200;
+	}
+	if (flag != -1 && flag != 5) {
+		int * ddst = origin_dst + (flag - 1) * 0x200;
+		for (i = 0; i < 128; i++) {
+			ddst[i] = checker[i];
+		}
+	}
+	origin_dst = (int *)dst;
+	if (va[5]) ide_read(5, blockno * 2 + 1, (void *)checker, 1);
+	for (i = 4; i < 8; i++) {
+		if (va[i - 3]) {
+			ide_read(i - 3, blockno * 2 + 1, dst, 1);
+			int j;
+			for (j = 0; j < 128; j++) {
+				checker[j] ^= ((int *)dst)[j];
+			}
+		}
+		dst += 0x200;
+	}
+	if (flag != -1 && flag != 5) {
+		int * ddst = origin_dst + (flag - 1) * 0x200;
+		for (i = 0; i < 128; i++) {
+			ddst[i] = checker[i];
+		}
+	}
+	return invalid;
+}
