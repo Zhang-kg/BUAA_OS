@@ -175,6 +175,7 @@ int raid4_read(u_int blockno, void * dst) {
 	int va[6];
 	int i;
 	int flag = -1;
+	int checkwrong = 0;
 	int * origin_dst = (int*)dst;
 	for (i = 1; i <= 5; i++) {
 		va[i] = raid4_valid(i);
@@ -204,7 +205,7 @@ int raid4_read(u_int blockno, void * dst) {
 	}
 	if (invalid == 0) {
 		for (i = 0; i < 128; i++) {
-			if (checker[i] != 0) return -1;
+			if (checker[i] != 0) checkwrong = 1;
 		}
 	}
 	origin_dst = (int *)dst;
@@ -227,8 +228,9 @@ int raid4_read(u_int blockno, void * dst) {
 	}
 	if (invalid == 0) {
 		for (i = 0; i < 128; i++) {
-			if (checker[i] != 0) return -1;
+			if (checker[i] != 0) checkwrong = 1;
 		}
 	}
+	if (invalid == 0 && checkwrong) return -1;
 	return invalid;
 }
