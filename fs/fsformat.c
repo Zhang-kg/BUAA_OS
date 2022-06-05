@@ -208,30 +208,27 @@ int make_link_block(struct File *dirf, int nblk) {
 /*** exercise 5.4 ***/
 struct File *create_file(struct File *dirf) {
     struct File *dirblk;
-    int i, bno, found;
+    int i, j, bno, found;
     int nblk = dirf->f_size / BY2BLK;
 
     // Your code here
     // Step1: According to different range of nblk, make classified discussion to
     //        calculate the correct block number.
-	if (!nblk) {
-        return (struct File *)(disk[make_link_block(dirf, nblk)].data);
-    }
-    if (nblk <= NDIRECT) {
-        bno = dirf -> f_direct[nblk - 1];
-    } else {
-        bno = ((u_int *)(disk[dirf -> f_indirect].data))[nblk - 1];
-    }
-    // Step2: Find an unused pointer
-	dirblk = (struct File *)(disk[bno].data);
-    i = 0;
-    while (i < FILE2BLK) {
-        if (dirblk[i].f_name[0] == '\0') {
-            return &dirblk[i];
+	for (i = 0; i < nblk; i++) {
+        if (i < NDIRECT) {
+            bno = dirf -> f_direct[i];
+        } else {
+            bno = ((int *)(disk[dirf -> f_indirect].data))[i];
         }
-        i++;
+        dirblk = (struct File *)(disk[bno].data);
+        for (j = 0; j < FILE2BLK; j++) {
+            if (dirblk[j].f_name[0] == '\0') {
+                return &dirblk[j];
+            }
+        }
     }
-    return (struct File *)(disk[make_link_block(dirf, nblk)].data);
+    bno = make_link_block(dirf, nblk);
+    return (struct File *)disk[bno].data;
 }
 
 // Write file to disk under specified dir.
