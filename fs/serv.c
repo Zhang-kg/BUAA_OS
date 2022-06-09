@@ -274,7 +274,6 @@ void serve_dirlist(u_int envid, struct Fsreq_dirlist * rq) {
 	//writef("1\n");
 	//writef("%s\n", rq->ans);
 	rq -> ans_len = strlen(&(rq -> ans));
-	syscall_mem_unmap(envid, REQVA);
 	ipc_send(envid, 0, REQVA, perm);
 }
 

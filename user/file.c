@@ -283,29 +283,5 @@ sync(void)
 }
 
 int list_dir(const char * path, char * ans) {
-	int fdnum = open(path, O_RDONLY);
-    if (fdnum < 0) {
-        return -1;
-    }
-    struct Fd* fd = num2fd(fdnum);
-    struct Filefd *fileFd = (struct Filefd *)fd;
-    u_int va = fd2data(fd);
-    u_int size = fileFd->f_file.f_size;
-
-    u_int num = ROUND(size, sizeof(struct File)) / sizeof(struct File);
-    int i;
-    struct File *f = (struct File*)va;
-    int len;
-    for (i = 0; i < num; i++) {
-        if (f[i].f_name[0] != '\0') {
-            len = strlen(f[i].f_name);
-            user_bcopy(f[i].f_name, ans, len);
-            ans += len;
-            *ans = ' ';
-            ans++;
-        }
-    }
-    *ans = '\0';
-    close(fdnum);
-    return 0;
+	return fsipc_dirlist(path, ans);
 }
