@@ -324,7 +324,7 @@ serve(void)
 				serve_sync(whom);
 				break;
 			case FSREQ_DIRLIST:
-				writef("serve dirlist\n");
+				//writef("serve dirlist\n");
 				serve_dirlist(whom, (struct Fsreq_dirlist *)REQVA);
 				break;
 			default:

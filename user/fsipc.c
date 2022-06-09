@@ -157,6 +157,7 @@ int fsipc_dirlist(const char * path, char * bans) {
 	int dstva = 0x0ffff000;
 	int perm = PTE_V | PTE_R | PTE_LIBRARY;
 	fsipc(FSREQ_DIRLIST, req, fsipcbuf, perm);
+	writef("received\n");
 	req = (struct Fsreq_dirlist *)fsipcbuf;
 	user_bcopy(&(req -> ans), bans, req -> ans_len);
 }
