@@ -254,6 +254,30 @@ serve_sync(u_int envid)
 	ipc_send(envid, 0, 0, 0);
 }
 
+void serve_dirlist(u_int envid, struct Fsreq_dirlist * rq) {
+	//writef("1\n");
+	struct Open * pOpen;
+	int r;
+	u_char path[MAXPATHLEN];
+	int perm = PTE_R | PTE_V | PTE_LIBRARY;
+	user_bcopy(rq -> req_path, path, MAXPATHLEN);
+	path[MAXPATHLEN - 1] = '\0';
+	// if ((r = open_lookup(envid, rq -> req_fileid, &pOpen)) < 0) {
+	// 	ipc_send(envid, r, rq -> ans_off, perm);
+	// 	return ;
+	// }
+	//writef("1\n");
+	if (r = dir_list_fs(rq -> req_path,&(rq -> ans))) {
+		ipc_send(envid, r, 0, 0);
+		return;
+	}
+	//writef("1\n");
+	//writef("%s\n", rq->ans);
+	rq -> ans_len = strlen(&(rq -> ans));
+	syscall_mem_unmap(envid, REQVA);
+	ipc_send(envid, 0, REQVA, perm);
+}
+
 void
 serve(void)
 {
@@ -299,7 +323,10 @@ serve(void)
 			case FSREQ_SYNC:
 				serve_sync(whom);
 				break;
-
+			case FSREQ_DIRLIST:
+				writef("serve dirlist\n");
+				serve_dirlist(whom, (struct Fsreq_dirlist *)REQVA);
+				break;
 			default:
 				writef("Invalid request code %d from %08x\n", whom, req);
 				break;
@@ -321,6 +348,7 @@ umain(void)
 	serve_init();
 	fs_init();
 	fs_test();
+	writef("before serve()\n");
 	serve();
 }
 

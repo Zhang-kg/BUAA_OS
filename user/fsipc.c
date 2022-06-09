@@ -148,3 +148,15 @@ fsipc_sync(void)
 	return fsipc(FSREQ_SYNC, fsipcbuf, 0, 0);
 }
 
+int fsipc_dirlist(const char * path, char * bans) {
+	struct Fsreq_dirlist * req;
+	if (strlen(path) > MAXPATHLEN) return -E_BAD_PATH;
+	req = (struct Fsreq_dirlist *)fsipcbuf;
+	strcpy((char *)req -> req_path, path);
+	//req -> ans = 0x0ffff000 + MAXPATHLEN + 4;
+	int dstva = 0x0ffff000;
+	int perm = PTE_V | PTE_R | PTE_LIBRARY;
+	fsipc(FSREQ_DIRLIST, req, fsipcbuf, perm);
+	req = (struct Fsreq_dirlist *)fsipcbuf;
+	user_bcopy(&(req -> ans), bans, req -> ans_len);
+}

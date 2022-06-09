@@ -567,6 +567,38 @@ dir_lookup(struct File *dir, char *name, struct File **file)
 	return -E_NOT_FOUND;
 }
 
+int dir_list_fs(const char * path, char * ans) {
+	//writef("2\n");
+	struct File * dir;
+	struct File * file;
+	walk_path(path, NULL, &dir, NULL);
+	//writef("3\n");
+	int r;
+	u_int i, j, nblock;
+	void *blk;
+	struct File * f;
+	char * ptrc = ans;
+	nblock = ROUND(dir -> f_size, BY2BLK) / BY2BLK;
+	for (i = 0; i < nblock; i++) {
+		if ((r = file_get_block(dir, i, &blk))) return r;
+		for (j = 0; j < FILE2BLK; j++) {
+			f = ((struct File *)blk) + j;
+			if (f -> f_name[0] != '\0') {
+				//writef("%s\n", f->f_name);
+				//strcpy(ptrc, f -> f_name);
+				//writef("ans = %x\n", ans);
+				user_bcopy(f -> f_name, ptrc, strlen(f -> f_name));
+				ptrc += strlen(f -> f_name);
+				*ptrc = ' ';
+				ptrc++;
+				//writef("234234\n");
+			}
+		}
+	}
+	*ptrc = '\0';
+	//writef("fini\n");
+	return 0;
+}
 
 // Overview:
 //	Alloc a new File structure under specified directory. Set *file
