@@ -48,16 +48,22 @@ open(const char *path, int mode)
 
 	// Step 3: Set the start address storing the file's content. Set size and fileid correctly.
 	// Hint: Use fd2data to get the start address.
+	if (mode & O_ALONE) {
+		syscall_mem_map(0, (void *)fd, 0, (void *)fd, (PTE_V | PTE_R));
+	}
 	ffd = (struct Filefd*)fd;
 	va = fd2data(fd);
 	fileid = ffd -> f_fileid;
 	size = ffd -> f_file.f_size;
-
+	if (mode & O_APPEND)	fd->fd_offset = size;
 	// Step 4: Alloc memory, map the file content into memory.
 	for (i = 0; i < size; i += BY2PG) {
 		if ((r = fsipc_map(fileid, i, va + i)) < 0) {
 			writef("cannot map the file.\n");
 			return r;
+		}
+		if (mode & O_ALONE) {
+			syscall_mem_map(0, va + i, 0, va + i, (PTE_V | PTE_R | PTE_COW));
 		}
 	}
 
@@ -188,7 +194,7 @@ file_write(struct Fd *fd, const void *buf, u_int n, u_int offset)
 			return r;
 		}
 	}
-
+	//writef("offset = %d\n", offset);
 	// Write the data
 	user_bcopy(buf, (char *)fd2data(fd) + offset, n);
 	return n;
