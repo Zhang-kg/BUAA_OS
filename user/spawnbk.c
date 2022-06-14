@@ -214,7 +214,6 @@ int spawn(char *prog, char **argv)
 	Elf32_Ehdr *ehdr;
     Elf32_Phdr* phdr;
 	// Before Step 2 , You had better check the "target" spawned is a execute bin 
-	fd = r;
 	if ((r = read(fd, elfbuf, sizeof(Elf32_Ehdr)) < 0)) {
         user_panic("spawn ::read fail !\n");
         return r;
