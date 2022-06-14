@@ -37,13 +37,11 @@ umain(void)
 		close(p[1]);
 	}
 	wait(pid);
-
+	
 	if ((i=pipe(p)) < 0)
 		user_panic("pipe: %e", i);
-
 	if ((pid=fork()) < 0)
 		user_panic("fork: %e", i);
-
 	if (pid == 0) {
 		close(p[0]);
 		for(;;){
@@ -56,6 +54,5 @@ umain(void)
 	close(p[0]);
 	close(p[1]);
 	wait(pid);
-
 	writef("pipe tests passed\n");
 }

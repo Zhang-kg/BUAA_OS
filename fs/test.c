@@ -47,11 +47,9 @@ fs_test(void)
 	} else if (r == 0) {
 		user_panic("file_open /not-found succeeded!");
 	}
-	writef("**********************statge1\n");
 	if ((r = file_open("/newmotd", &f)) < 0) {
 		user_panic("file_open /newmotd: %d", r);
 	}
-	writef("**********************statge2\n");
 	writef("file_open is good\n");
 
 	if ((r = file_get_block(f, 0, &blk)) < 0) {

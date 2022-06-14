@@ -105,23 +105,58 @@ again:
 				exit();
 			}
 			// Your code here -- open t for reading,
+			if ((fdnum = open(t, O_RDONLY)) < 0) {
+                writef(" < open error");
+                exit();
+            }
 			// dup it onto fd 0, and then close the fd you got.
+			if ((r = dup(fdnum, 0)) < 0) {
+                writef(" < dup error");
+                exit();
+            }
+            close(fdnum);
 			user_panic("< redirection not implemented");
 			break;
 		case '>':
 			// Your code here -- open t for writing,
+			if ((fdnum = open (t, O_WRONLY)) < 0) {
+                writef(" > open error");
+                exit();
+            }
 			// dup it onto fd 1, and then close the fd you got.
+			if ((r = dup(fdnum, 1)) < 0) {
+                writef(" > dup error");
+                exit();
+            }
+            close(fdnum);
 			user_panic("> redirection not implemented");
 			break;
 		case '|':
 			// Your code here.
 			// 	First, allocate a pipe.
+			if ((r = pipe(p)) < 0) {
+                writef("| pipe error");
+                exit();
+            }
 			//	Then fork.
+			if ((r = fork()) < 0) {
+                writef("| fork error");
+                exit();
+            }
 			//	the child runs the right side of the pipe:
 			//		dup the read end of the pipe onto 0
 			//		close the read end of the pipe
 			//		close the write end of the pipe
 			//		goto again, to parse the rest of the command line
+			if (r == 0) {
+                if ((r = dup(p[0], 0)) < 0) {
+                    writef("| child dup error");
+                    exit();
+                }
+                close(p[0]);
+                close(p[1]);
+                goto again;
+            }
 			//	the parent runs the left side of the pipe:
 			//		dup the write end of the pipe onto 1
 			//		close the write end of the pipe
@@ -129,7 +164,17 @@ again:
 			//		set "rightpipe" to the child envid
 			//		goto runit, to execute this piece of the pipeline
 			//			and then wait for the right side to finish
-			user_panic("| not implemented");
+			else {
+                rightpipe = r;
+                if ((r = dup(p[1], 1)) < 0) {
+                    writef("| father dup error");
+                    exit();
+                }
+                close(p[0]);
+                close(p[1]);
+                goto runit;
+            }
+			// user_panic("| not implemented");
 			break;
 		}
 	}

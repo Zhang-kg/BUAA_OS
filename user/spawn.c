@@ -123,9 +123,28 @@ int spawn(char *prog, char **argv)
 		return r;
 	}
 	// Your code begins here
+	Elf32_Ehdr *ehdr;
+    Elf32_Phdr* phdr;
 	// Before Step 2 , You had better check the "target" spawned is a execute bin 
+	if ((r = read(fd, elfbuf, sizeof(Elf32_Ehdr)) < 0)) {
+        user_panic("spawn ::read fail !\n");
+        return r;
+    }
+    ehdr = (Elf32_Ehdr*)elfbuf;
+    if (!usr_is_elf_format((u_char*)ehdr)) {
+        user_panic("spawn ::not a elf file !\n");
+        return -1;
+    }
 	// Step 2: Allocate an env (Hint: using syscall_env_alloc())
+	if ((child_envid = syscall_env_alloc()) < 0) {
+        user_panic("spawn ::env alloc fail !\n");
+        return child_envid;
+    }
 	// Step 3: Using init_stack(...) to initialize the stack of the allocated env
+	if ((r = init_stack(child_envid, argv, &esp)) < 0) {
+        user_panic("spawn ::init_stack fail !\n");
+        return r;
+    }
 	// Step 3: Map file's content to new env's text segment
 	//        Hint 1: what is the offset of the text segment in file? try to use objdump to find out.
 	//        Hint 2: using read_map(...)
@@ -135,6 +154,26 @@ int spawn(char *prog, char **argv)
 	//       the file is opened successfully, and env is allocated successfully.
 	// Note2: You can achieve this func in any way ，remember to ensure the correctness
 	//        Maybe you can review lab3 
+	u_int count = ehdr->e_phnum;
+    text_start = ehdr->e_phoff;
+    u_int entry_size = ehdr->e_phentsize;
+
+    for (i = 0; i < count; i++) {
+        if ((r = seek(fd, text_start)) < 0) {
+            user_panic("seek failed!");
+        }
+        if ((r = readn(fd, elfbuf, entry_size)) < 0) {
+            user_panic("readn failed!");
+        }
+        phdr = (Elf32_Phdr *)elfbuf;
+        if (phdr->p_type == PT_LOAD) {
+            if ((r = usr_load_elf(fd, phdr, child_envid)) < 0) {
+                user_panic("load faild %d!", r);
+            }
+        }
+        text_start += entry_size;
+    }
+    size = 0;
 	// Your code ends here
 
 	struct Trapframe *tf;
