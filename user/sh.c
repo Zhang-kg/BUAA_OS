@@ -118,6 +118,10 @@ again:
 			user_panic("< redirection not implemented");
 			break;
 		case '>':
+			if(gettoken(0, &t) != 'w'){
+				writef("syntax error: > not followed by word\n");
+				exit();
+			}
 			// Your code here -- open t for writing,
 			if ((fdnum = open (t, O_WRONLY)) < 0) {
                 writef(" > open error");

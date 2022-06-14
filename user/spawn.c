@@ -98,10 +98,98 @@ int usr_is_elf_format(u_char *binary){
     return 0;
 }
 
+#define BUFPAGE (0x40000000)
 int 
 usr_load_elf(int fd , Elf32_Phdr *ph, int child_envid){
 	//Hint: maybe this function is useful 
 	//      If you want to use this func, you should fill it ,it's not hard
+	u_int va = ph->p_vaddr;
+	u_int sgsize = ph->p_memsz;
+	u_int bin_size = ph->p_filesz;
+	u_int file_offset = ph->p_offset;
+	u_char buf[BY2PG];
+	u_int i = 0;
+	//writef("va : %x bin_size : %d sgsize : %d child: %x\n", va, bin_size, sgsize, child_envid);
+	int r;
+	u_int offset = va + i - ROUNDDOWN(va + i, BY2PG);
+	int size;
+	if (offset) {
+		r = syscall_mem_alloc(child_envid, va + i, PTE_V | PTE_R);
+		if (r < 0) {
+			return r;
+		}
+		size = MIN(bin_size - i, BY2PG - offset);
+		r = seek(fd, file_offset + i);
+		if (r < 0) {
+			return r;
+		}
+		r = readn(fd, buf, size);
+		if (r < 0) {
+			return r;
+		}
+		r = syscall_mem_map(child_envid, va + i, 0, BUFPAGE, PTE_V | PTE_R);
+		if (r < 0) {
+			return r;
+		}
+		user_bcopy((void*)buf, (void*)(BUFPAGE + offset), size);
+		r = syscall_mem_unmap(0, BUFPAGE);
+		if (r < 0) {
+			return r;
+		}
+		i = i + size;
+	}
+	//writef("__1__\n");
+	while (i < bin_size) {
+		size = MIN(BY2PG, bin_size - i);
+		r = syscall_mem_alloc(child_envid, va + i, PTE_V | PTE_R);
+		if (r < 0) {
+			return r;
+		}
+		size = MIN(bin_size - i, BY2PG);
+		r = seek(fd, file_offset + i);
+		if (r < 0) {
+			return r;
+		}
+		r = readn(fd, buf, size);
+		if (r < 0) {
+			return r;
+		}
+		r = syscall_mem_map(child_envid, va + i, 0, BUFPAGE, PTE_V | PTE_R);
+		if (r < 0) {
+			return r;
+		}
+		user_bcopy((void*)buf, (void*)BUFPAGE, size);
+		r = syscall_mem_unmap(0, BUFPAGE);
+		if (r < 0) {
+			return r;
+		}
+		i += size;
+	}
+	//writef("__2__\n");
+	offset = va + i - ROUNDDOWN(va + i, BY2PG);
+	if (offset) {
+		size = MIN(sgsize - i, BY2PG - offset);
+		r = syscall_mem_map(child_envid, va + i, 0, BUFPAGE, PTE_V | PTE_R);
+		if (r < 0) {
+			return r;
+		}
+		user_bzero((void*)(BUFPAGE + offset), size);
+		r = syscall_mem_unmap(0, BUFPAGE);
+		if (r < 0) {
+			return r;
+		}
+		i = i + size;
+	}
+	//writef("__3__\n");
+	while (i < sgsize)  {
+		size = MIN(BY2PG, sgsize - i);
+		r = syscall_mem_alloc(child_envid, va + i, PTE_V | PTE_R);
+		if (r < 0) {
+			return r;
+		}
+		i += size;
+	}
+	//writef("__4__\n");
 	return 0;
 }
 
