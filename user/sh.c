@@ -115,7 +115,7 @@ again:
                 exit();
             }
             close(fdnum);
-			user_panic("< redirection not implemented");
+			//user_panic("< redirection not implemented");
 			break;
 		case '>':
 			if(gettoken(0, &t) != 'w'){
@@ -133,7 +133,7 @@ again:
                 exit();
             }
             close(fdnum);
-			user_panic("> redirection not implemented");
+			//user_panic("> redirection not implemented");
 			break;
 		case '|':
 			// Your code here.
