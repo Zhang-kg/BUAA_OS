@@ -247,12 +247,12 @@ int sys_env_alloc(void)
 	struct Env *e;
 	
 	if ((r = env_alloc(&e, curenv -> env_id)) < 0) return r;
-    bcopy((void *)(KERNEL_SP - sizeof(struct Trapframe)), (void*)(&(e -> env_tf)), sizeof(struct Trapframe));
-    e -> env_tf.pc = e -> env_tf.cp0_epc;
+    bcopy((void *)(KERNEL_SP - sizeof(struct Trapframe)), (void*)(&(e -> env_pthreads[0].pcb_tf)), sizeof(struct Trapframe));
+    e -> env_pthreads[0].pcb_tf.pc = e -> env_pthreads[0].pcb_tf.cp0_epc;
     //e -> env_id = 0;
-    e -> env_tf.regs[2] = 0;
-    e -> env_status = ENV_NOT_RUNNABLE;
-    e -> env_pri = curenv -> env_pri;
+    e -> env_pthreads[0].pcb_tf.regs[2] = 0;
+    e -> env_pthreads[0].pcb_status = ENV_NOT_RUNNABLE;
+    e -> env_pthreads[0].pcb_pri = curenv -> env_pthreads[0].pcb_pri;
 
 	return e->env_id;
 	//	panic("sys_env_alloc not implemented");
@@ -279,10 +279,22 @@ int sys_set_env_status(int sysno, u_int envid, u_int status)
 	//if (status != ENV_RUNNABLE && status != ENV_NOT_RUNNABLE && status != ENV_FREE) return -E_INVAL;
 	if (status > 2 || status < 0) return -E_INVAL;
     if ((ret = envid2env(envid, &env, 0)) < 0) return -E_INVAL;
-	env -> env_status = status;
-    if (env -> env_status == ENV_RUNNABLE) LIST_INSERT_HEAD(env_sched_list, env, env_sched_link);
+	env -> env_pthreads[0].pcb_status = status;
+    if (env -> env_pthreads[0].pcb_status == ENV_RUNNABLE) LIST_INSERT_HEAD(pcb_sched_list, &(env -> env_pthreads[0]), pcb_sched_link);
 	return 0;
 	//	panic("sys_env_set_status not implemented");
+}
+
+int sys_set_thread_status(int sysno, u_int threadid, u_int status) {
+	struct Pcb * p;
+	int ret;
+	if (status > 2 || status < 0) return -E_INVAL;
+	if ((ret = pthreadid2pcb(threadid, &p)) < 0) return ret;
+	if (status == PTHREAD_RUNNABLE) {
+		printf("status = %d, pthread_id = %b\n", status, threadid);
+		LIST_INSERT_HEAD(pcb_sched_list, p, pcb_sched_link);
+	}
+	p -> pcb_status = status;
 }
 
 /* Overview:
@@ -335,9 +347,11 @@ void sys_panic(int sysno, char *msg)
 void sys_ipc_recv(int sysno, u_int dstva)
 {
 	if (dstva >= UTOP) return;
+	if (curenv -> env_ipc_recving == 1) sys_yield();
     curenv -> env_ipc_recving = 1;
+	curenv -> env_ipc_waiting_pthread_no = curpcb -> pthread_id & 0x7;
     curenv -> env_ipc_dstva = dstva;
-    curenv -> env_status = ENV_NOT_RUNNABLE;
+    curenv -> env_pthreads[0].pcb_status = ENV_NOT_RUNNABLE;
     sys_yield();
 }
 
@@ -365,6 +379,7 @@ int sys_ipc_can_send(int sysno, u_int envid, u_int value, u_int srcva,
 	int r;
     struct Env *e;
     struct Page *p;
+	struct Pcb * pthread_p;
     if (srcva >= UTOP) return -E_IPC_NOT_RECV;
 	if ((r = envid2env(envid, &e, 0)) < 0) return -E_IPC_NOT_RECV;
     if (!e -> env_ipc_recving) return -E_IPC_NOT_RECV;
@@ -375,7 +390,44 @@ int sys_ipc_can_send(int sysno, u_int envid, u_int value, u_int srcva,
     }
     e -> env_ipc_from = curenv -> env_id;
     e -> env_ipc_value = value;
-    e -> env_status = ENV_RUNNABLE;
+	pthread_p = &e -> env_pthreads[e -> env_ipc_waiting_pthread_no];
+	pthread_p -> pcb_status = PTHREAD_RUNNABLE;
+    // e -> env_status = ENV_RUNNABLE;
 	e -> env_ipc_perm = perm;
 	return 0;
 }
+
+
+int sys_get_threadid(int sysno) {
+	return curpcb -> pthread_id;
+}
+
+int sys_thread_destroy(int sysno, u_int pthreadid) {
+	int r;
+	struct Pcb * p;
+	if ((r = pthreadid2pcb(pthreadid, &p)) < 0) {
+		return r;
+	}
+	printf("[0x%08x] destroyint pcb 0x%08x\n", curenv -> env_id, p -> pthread_id);
+	thread_destroy(p);
+	return 0;
+}
+
+int sys_thread_alloc(int sysno) {
+	int r;
+	struct Pcb * p;
+	if (curenv) {
+		r = thread_alloc(curenv, &p);
+	} else r = -1;
+	if (r < 0) {
+		return r;
+	}
+	if (curenv) p -> pcb_pri = curenv -> env_pthreads[0].pcb_pri;
+	else p -> pcb_pri = 1;
+	p -> pcb_status = PTHREAD_NOT_RUNNABLE;
+	p -> pcb_tf.regs[2] = 0;
+	p -> pcb_tf.pc = p -> pcb_tf.cp0_epc;
+	return p -> pthread_id & 0x7;
+}
+
+

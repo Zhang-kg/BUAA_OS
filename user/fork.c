@@ -167,6 +167,7 @@ fork(void)
 	u_int newenvid;
 	extern struct Env *envs;
 	extern struct Env *env;
+	extern struct Pcb * pcb;
 	u_int i;
 
 	u_int parent_id = syscall_getenvid();
@@ -178,6 +179,7 @@ fork(void)
 	if (newenvid == 0) {
 		env = &envs[ENVX(syscall_getenvid())];
 		env -> env_parent_id = parent_id;
+		pcb = &env -> env_pthreads[0];
 		return 0;
 	}
 	//1
@@ -208,3 +210,4 @@ sfork(void)
 	user_panic("sfork not implemented");
 	return -E_INVAL;
 }
+

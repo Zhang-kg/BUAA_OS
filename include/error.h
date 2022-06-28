@@ -20,7 +20,10 @@
 #define E_BAD_PATH	10	// Bad path
 #define E_FILE_EXISTS	11	// File already exists
 #define E_NOT_EXEC	12	// File not a valid executable
-
-#define MAXERROR 12
+#define E_PTHREAD_MAX	13 // to many pthreads in a env
+#define E_PTHREAD_NOTFOUND	14
+#define E_PTHREAD_CANNOTCANCEL	15
+#define MAXERROR 15
 
 #endif // _ERROR_H_
+

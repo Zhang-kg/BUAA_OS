@@ -5,6 +5,7 @@
 #include <env.h>
 
 extern struct Env *env;
+extern struct Pcb * pcb;
 
 // Send val to whom.  This function keeps trying until
 // it succeeds.  It should panic() on any error other than
@@ -48,4 +49,5 @@ ipc_recv(u_int *whom, u_int dstva, u_int *perm)
 
 	return env->env_ipc_value;
 }
+
 
