@@ -27,6 +27,10 @@
 #define PTHREAD_CANCEL_ASYNCHRONOUS 0		// for cancel type
 #define PTHREAD_CANCEL_DEFERRED 1		// for cancel type(default)
 
+#define SEM_FREE		0
+#define SEM_VALID		1
+
+#define PTHREAD_CANCELED_EXIT	99
 struct Pcb {
 	struct Trapframe pcb_tf;
 	pthread_t pthread_id;
@@ -41,8 +45,9 @@ struct Pcb {
 	int pcb_cancelState;
 	int pcb_cancelType;
 	u_int pcb_canceled;
-	u_int pcb_nop[13];
-
+	u_int pcb_detach;
+	int pcb_exit_value;
+	u_int pcb_nop[11];
 };
 
 struct Env {
@@ -72,6 +77,18 @@ struct Env {
 	u_int env_pthread_count;
 	u_int env_nop[496];                  // align to avoid mul instruction
 	struct Pcb env_pthreads[8];
+};
+
+struct sem {
+	u_int sem_envid;
+	int sem_head_index;
+	int sem_tail_index;
+	char sem_name[16];
+	int sem_value;
+	int sem_status;
+	int sem_shared;
+	int sem_wait_count;
+	struct Pcb * sem_wait_list[10];
 };
 
 LIST_HEAD(Env_list, Env);

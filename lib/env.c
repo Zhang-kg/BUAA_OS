@@ -20,6 +20,9 @@ extern char *KERNEL_SP;
 
 static u_int asid_bitmap[2] = {0}; // 64
 
+void exit_env() {
+    sys_env_destroy(0, 0);
+}
 
 /* Overview:
  *  This function is to allocate an unused ASID
@@ -245,13 +248,16 @@ int thread_alloc(struct Env * e, struct Pcb ** new) {
     p -> pthread_id = mkpcbid(p);
     printf("pthread id is 2'b%b, no is %d\n", p -> pthread_id, thread_no);
     p -> pcb_status = PTHREAD_RUNNABLE;
-    p -> pcb_tf.cp0_status = 0x10001004;
-    p -> pcb_exit_ptr = (void *)0;
+    p -> pcb_tf.cp0_status = 0x1000100C;
     p -> pcb_tf.regs[29] = USTACKTOP - 4 * BY2PG * (p -> pthread_id & 0x7);
     p -> pcb_cancelState = PTHREAD_CANCEL_ENABLE;
     p -> pcb_cancelType = PTHREAD_CANCEL_DEFERRED;
     p -> pcb_canceled = 0;
     p -> pcb_joined_count = 0;
+    p -> pcb_joined_thread_ptr = NULL;
+    p -> pcb_exit_value = 0;
+    p -> pcb_exit_ptr = (void *)&p -> pcb_exit_value;
+    p -> pcb_detach = 0;
     if (new != NULL) *new = p;
     return 0;
 }
@@ -302,6 +308,7 @@ env_alloc(struct Env **new, u_int parent_id)
     if ((r = thread_alloc(e, &p)) < 0) {
         return r;
     }
+	p -> pcb_tf.regs[31] = exit_env;
     printf("pthread's id double check 2'b%b\n", p -> pthread_id);
     /* Step 4: Focus on initializing the sp register and cp0_status of env_tf field, located at this new Env. */
     // e -> env_tf.cp0_status = 0x1000100c;
@@ -547,8 +554,6 @@ env_destroy(struct Env *e)
 }
 
 void thread_destroy(struct Pcb * p) {
-    if (p -> pcb_status == PTHREAD_RUNNABLE)
-        LIST_REMOVE(p, pcb_sched_link);
     thread_free(p);
     if (curpcb == p) {
         curpcb == NULL;

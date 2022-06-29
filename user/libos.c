@@ -8,7 +8,11 @@ exit(void)
 	//close_all();
 	syscall_env_destroy(0);
 }
-
+void exit_thread(void) {
+	struct Pcb *p = &env->env_pthreads[syscall_get_threadid()&0x7];
+	p->pcb_exit_value = 0;
+	syscall_thread_destroy(0);
+}
 
 struct Env *env;
 struct Pcb * pcb;
@@ -30,8 +34,8 @@ libmain(int argc, char **argv)
 	// call user main routine
 	umain(argc, argv);
 	// exit gracefully
-	//exit();
-	syscall_thread_destroy(0);
+	exit();
+	//syscall_thread_destroy(0);
 	//syscall_env_destroy(0);
 }
 

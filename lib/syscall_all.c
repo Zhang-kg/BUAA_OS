@@ -290,8 +290,8 @@ int sys_set_thread_status(int sysno, u_int threadid, u_int status) {
 	int ret;
 	if (status > 2 || status < 0) return -E_INVAL;
 	if ((ret = pthreadid2pcb(threadid, &p)) < 0) return ret;
-	if (status == PTHREAD_RUNNABLE) {
-		printf("status = %d, pthread_id = %b\n", status, threadid);
+	if (status == PTHREAD_RUNNABLE && p -> pcb_status == PTHREAD_FREE) {
+		//printf("status = %d, pthread_id = %b\n", status, threadid);
 		LIST_INSERT_HEAD(pcb_sched_list, p, pcb_sched_link);
 	}
 	p -> pcb_status = status;
@@ -401,17 +401,28 @@ int sys_ipc_can_send(int sysno, u_int envid, u_int value, u_int srcva,
 int sys_get_threadid(int sysno) {
 	return curpcb -> pthread_id;
 }
-
 int sys_thread_destroy(int sysno, u_int pthreadid) {
 	int r;
 	struct Pcb * p;
 	if ((r = pthreadid2pcb(pthreadid, &p)) < 0) {
 		return r;
 	}
+	if (p -> pcb_status == PTHREAD_FREE) {
+		return -E_INVAL;
+	}
+	if (p -> pcb_joined_thread_ptr != NULL) {
+		struct Pcb * tmp = p -> pcb_joined_thread_ptr;
+		if (p -> pcb_exit_ptr) {
+			*(tmp -> pcb_join_value_ptr) = p -> pcb_exit_ptr;
+		}
+		sys_set_thread_status(0, tmp -> pthread_id, ENV_RUNNABLE);
+		p -> pcb_joined_thread_ptr = NULL;
+	}
 	printf("[0x%08x] destroyint pcb 0x%08x\n", curenv -> env_id, p -> pthread_id);
 	thread_destroy(p);
 	return 0;
 }
+
 
 int sys_thread_alloc(int sysno) {
 	int r;
@@ -425,9 +436,109 @@ int sys_thread_alloc(int sysno) {
 	if (curenv) p -> pcb_pri = curenv -> env_pthreads[0].pcb_pri;
 	else p -> pcb_pri = 1;
 	p -> pcb_status = PTHREAD_NOT_RUNNABLE;
+	LIST_INSERT_HEAD(pcb_sched_list, p, pcb_sched_link);
 	p -> pcb_tf.regs[2] = 0;
 	p -> pcb_tf.pc = p -> pcb_tf.cp0_epc;
 	return p -> pthread_id & 0x7;
 }
 
+int sys_thread_join(int sysno, u_int threadid, void ** value_ptr) {
+	struct Pcb * p;
+	int r;
+	if ((r = pthreadid2pcb(threadid, &p)) < 0) {
+		return r;
+	}
+	if (p -> pcb_detach == 1) {
+		return -E_PTHREAD_JOIN_FAIL;
+	}
+	if (p -> pcb_status == PTHREAD_FREE) {
+		if (value_ptr != 0) {
+			*value_ptr = p -> pcb_exit_ptr;
+		}
+		return 0;
+	}
+	if (p -> pcb_joined_thread_ptr != NULL) {
+		return -E_PTHREAD_JOIN_FAIL;
+	}
+	p -> pcb_joined_thread_ptr = curpcb;
+	curpcb -> pcb_join_value_ptr = value_ptr;
+	sys_set_thread_status(0, curpcb -> pthread_id, PTHREAD_NOT_RUNNABLE);
+	struct Trapframe * trap = (struct Trapframe *)(KERNEL_SP - sizeof(struct Trapframe));
+	trap -> regs[2] = 0;
+	trap -> pc = trap -> cp0_epc;
+	sys_yield();
+	return 0;
+}
 
+int sys_sem_destroy(int sysno, sem_t * sem) {
+	if ((sem -> sem_envid != curenv->env_id) && (sem -> sem_shared == 0)) {
+		return -E_SEM_NOTFOUND;
+	}
+	if (sem -> sem_status == SEM_FREE) {
+		return 0;
+	}
+	sem -> sem_status = SEM_FREE;
+	return 0;
+}
+
+int sys_sem_wait(int sysno, sem_t * sem) {
+	if (sem -> sem_status == SEM_FREE) {
+		return -E_SEM_ERROR;
+	}
+	sem -> sem_value -= 1;
+	if (sem -> sem_wait_count >= 10) {
+		return -E_SEM_ERROR;
+	}
+	if (sem -> sem_value < 0) {
+		sem -> sem_wait_list[sem -> sem_head_index] = curpcb;
+		sem -> sem_head_index = (sem -> sem_head_index + 1) % 10;
+		sem -> sem_wait_count += 1;
+		sys_set_thread_status(0, 0, PTHREAD_NOT_RUNNABLE);
+		struct Trapframe *trap = (struct Trapframe *)(KERNEL_SP - sizeof(struct Trapframe));
+		trap->regs[2] = 0;
+		trap->pc = trap->cp0_epc;
+		sys_yield();
+	} else {
+		return 0;
+	}
+	return -E_SEM_ERROR;
+}
+
+int sys_sem_trywait(int sysno, sem_t * sem) {
+	if (sem -> sem_status == SEM_FREE) {
+		return -E_SEM_ERROR;
+	}
+	if (sem -> sem_value > 0) {
+		sem -> sem_value -= 1;
+		return 0;
+	}
+	return -E_SEM_EAGAIN;
+}
+
+int sys_sem_post(int sysno, sem_t * sem) {
+	if (sem->sem_status == SEM_FREE) {
+		return -E_SEM_ERROR;
+	}
+	sem -> sem_value += 1;
+	if (sem -> sem_value > 0) {
+		return 0;
+	} else {
+		struct Pcb * p;
+		sem -> sem_wait_count -= 1;
+		p = sem -> sem_wait_list[sem -> sem_tail_index];
+		sem -> sem_wait_list[sem -> sem_tail_index] = 0;
+		sem -> sem_tail_index = (sem -> sem_tail_index + 1) % 10;
+		sys_set_thread_status(0, p -> pthread_id, PTHREAD_RUNNABLE);
+	}
+	return 0;
+}
+
+int sys_sem_getvalue(int sysno, sem_t * sem, int * valuep) {
+	if (sem->sem_status == SEM_FREE) {
+		return -E_SEM_ERROR;
+	}
+	if (valuep != 0) {
+		*valuep = sem->sem_value;
+	}
+	return 0;
+}

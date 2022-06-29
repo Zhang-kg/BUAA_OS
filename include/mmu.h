@@ -125,8 +125,11 @@
 #define E_PTHREAD_MAX	13 // to many pthreads in a env
 #define E_PTHREAD_NOTFOUND	14
 #define E_PTHREAD_CANNOTCANCEL	15
-#define MAXERROR 15
-
+#define E_PTHREAD_JOIN_FAIL		16
+#define E_SEM_ERROR		17
+#define E_SEM_NOTFOUND	18
+#define E_SEM_EAGAIN	19
+#define MAXERROR 19
 #ifndef __ASSEMBLER__
 
 /*

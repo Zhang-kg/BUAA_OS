@@ -18,9 +18,7 @@ void umain() {
 	args[2] = 3;
 	pthread_create(&thread,NULL,test,(void *)args);
 	writef("son is create!\n");
-	//writef("thread id is 0x%x\n",   thread);
-	while ((int)env->env_pthreads[thread&0x7].pcb_exit_ptr == 0){
-		writef("1");
+	while ((int)env->env_pthreads[thread&0x7].pcb_status != ENV_FREE) {
 	}
 	writef("son exit ret is %d\n",*((int *)env->env_pthreads[thread&0x7].pcb_exit_ptr));
 }
