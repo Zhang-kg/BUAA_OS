@@ -19,6 +19,7 @@ void umain() {
 	pthread_create(&thread,NULL,test,(void *)args);
 	writef("son is create!\n");
 	while ((int)env->env_pthreads[thread&0x7].pcb_status != ENV_FREE) {
+		writef("wait ");
 	}
 	writef("son exit ret is %d\n",*((int *)env->env_pthreads[thread&0x7].pcb_exit_ptr));
 }

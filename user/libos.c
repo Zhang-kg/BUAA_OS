@@ -8,9 +8,9 @@ exit(void)
 	//close_all();
 	syscall_env_destroy(0);
 }
-void exit_thread(void) {
+void exit_thread_final(int exit_value) {
 	struct Pcb *p = &env->env_pthreads[syscall_get_threadid()&0x7];
-	p->pcb_exit_value = 0;
+	p->pcb_exit_value = exit_value;
 	syscall_thread_destroy(0);
 }
 

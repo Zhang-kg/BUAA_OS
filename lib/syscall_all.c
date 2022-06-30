@@ -448,16 +448,17 @@ int sys_thread_join(int sysno, u_int threadid, void ** value_ptr) {
 	if ((r = pthreadid2pcb(threadid, &p)) < 0) {
 		return r;
 	}
-	if (p -> pcb_detach == 1) {
+	if (p -> pcb_detach == 1 || p -> pcb_joined_thread_ptr != 0) {
 		return -E_PTHREAD_JOIN_FAIL;
 	}
 	if (p -> pcb_status == PTHREAD_FREE) {
-		if (value_ptr != 0) {
+		if (value_ptr != 0 && p -> pcb_exit_ptr != 0) {
 			*value_ptr = p -> pcb_exit_ptr;
+			p -> pcb_exit_ptr = 0;
 		}
 		return 0;
 	}
-	if (p -> pcb_joined_thread_ptr != NULL) {
+	if (curpcb -> pcb_joined_thread_ptr == p) {
 		return -E_PTHREAD_JOIN_FAIL;
 	}
 	p -> pcb_joined_thread_ptr = curpcb;
@@ -467,7 +468,7 @@ int sys_thread_join(int sysno, u_int threadid, void ** value_ptr) {
 	trap -> regs[2] = 0;
 	trap -> pc = trap -> cp0_epc;
 	sys_yield();
-	return 0;
+	return -E_PTHREAD_JOIN_FAIL;
 }
 
 int sys_sem_destroy(int sysno, sem_t * sem) {

@@ -1,7 +1,6 @@
 #include "lib.h"
 #include <error.h>
 #include <mmu.h>
-
 int pthread_create(pthread_t *thread, const pthread_attr_t *attr, void * (*start_rountine)(void *), void *arg) {
 	int newthread = syscall_thread_alloc();
 	writef("finish thread alloc in user/pthread.c/pthread_create\n");
@@ -24,7 +23,6 @@ void pthread_exit(void *value_ptr) {
 	u_int threadid = syscall_get_threadid();
 	struct Pcb *p = &env->env_pthreads[threadid&0x7];
 	p->pcb_exit_ptr = value_ptr;
-	if (value_ptr) writef("value is %d\n", *(int *)(value_ptr));
 	// exit();	
     syscall_thread_destroy(0);
 }

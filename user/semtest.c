@@ -62,17 +62,17 @@ void umain() {
 		user_panic("get value error: %d\n",r);
 	}
 	int i = 0;
-//	for (i = 0; i < 9; ++i) {
-//		writef("i = %d\n", i);
-//		if (value <= 0) {
-//			writef("father post!\n");
-//			sem_post(&mysem);
-//		}
-//		syscall_yield();
-//		r = sem_getvalue(&mysem,&value);
-//		if (r < 0) {
-//			user_panic("r is %d\n",r);
-//		}
-//	}
+	for (i = 0; i < 9; ++i) {
+		writef("i = %d\n", i);
+		if (value <= 0) {
+			writef("father post!\n");
+			sem_post(&mysem);
+		}
+		syscall_yield();
+		r = sem_getvalue(&mysem,&value);
+		if (r < 0) {
+			user_panic("r is %d\n",r);
+		}
+	}
 
 }

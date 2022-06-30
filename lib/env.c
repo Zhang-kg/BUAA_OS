@@ -308,6 +308,7 @@ env_alloc(struct Env **new, u_int parent_id)
     if ((r = thread_alloc(e, &p)) < 0) {
         return r;
     }
+	p -> pcb_joined_thread_ptr = 0;
 	p -> pcb_tf.regs[31] = exit_env;
     printf("pthread's id double check 2'b%b\n", p -> pthread_id);
     /* Step 4: Focus on initializing the sp register and cp0_status of env_tf field, located at this new Env. */
