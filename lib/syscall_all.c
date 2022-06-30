@@ -412,7 +412,7 @@ int sys_thread_destroy(int sysno, u_int pthreadid) {
 	}
 	if (p -> pcb_joined_thread_ptr != NULL) {
 		struct Pcb * tmp = p -> pcb_joined_thread_ptr;
-		if (p -> pcb_exit_ptr) {
+		if (tmp -> pcb_join_value_ptr) {
 			*(tmp -> pcb_join_value_ptr) = p -> pcb_exit_ptr;
 		}
 		sys_set_thread_status(0, tmp -> pthread_id, ENV_RUNNABLE);
