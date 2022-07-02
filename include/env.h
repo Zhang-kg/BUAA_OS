@@ -7,6 +7,7 @@
 #include "queue.h"
 #include "trap.h"
 #include "mmu.h" 
+#include "pthread.h"
 
 #define LOG2NENV	10
 #define NENV		(1<<LOG2NENV)
@@ -17,38 +18,6 @@
 #define ENV_FREE	0
 #define ENV_RUNNABLE		1
 #define ENV_NOT_RUNNABLE	2
-#define PTHREAD_FREE 			0
-#define PTHREAD_RUNNABLE		1
-#define PTHREAD_NOT_RUNNABLE	2
-
-#define PTHREAD_MAX 8
-#define PTHREAD_CANCEL_ENABLE 1		// for cancel state(default)
-#define PTHREAD_CANCEL_DISABLE 0	// for cancel state
-#define PTHREAD_CANCEL_ASYNCHRONOUS 0		// for cancel type
-#define PTHREAD_CANCEL_DEFERRED 1		// for cancel type(default)
-
-#define SEM_FREE		0
-#define SEM_VALID		1
-
-#define PTHREAD_CANCELED_EXIT	99
-struct Pcb {
-	struct Trapframe pcb_tf;
-	pthread_t pthread_id;
-	u_int pcb_status;
-	LIST_ENTRY(Pcb) pcb_sched_link;
-	int pcb_joined_count;
-	struct Pcb * pcb_joined_thread_ptr;
-	void ** pcb_join_value_ptr;
-	
-	u_int pcb_pri;
-	void * pcb_exit_ptr;
-	int pcb_cancelState;
-	int pcb_cancelType;
-	u_int pcb_canceled;
-	u_int pcb_detach;
-	int pcb_exit_value;
-	u_int pcb_nop[11];
-};
 
 struct Env {
 	//struct Trapframe env_tf;        // Saved registers
@@ -75,20 +44,8 @@ struct Env {
 	// Lab 6 scheduler counts
 	u_int env_runs;			// number of times been env_run'ed
 	u_int env_pthread_count;
-	u_int env_nop[496];                  // align to avoid mul instruction
-	struct Pcb env_pthreads[8];
-};
-
-struct sem {
-	u_int sem_envid;
-	int sem_head_index;
-	int sem_tail_index;
-	char sem_name[16];
-	int sem_value;
-	int sem_status;
-	int sem_shared;
-	int sem_wait_count;
-	struct Pcb * sem_wait_list[10];
+	u_int env_nop[96];                  // align to avoid mul instruction
+	struct Pcb env_pthreads[PTHREAD_MAX];
 };
 
 LIST_HEAD(Env_list, Env);
@@ -139,4 +96,5 @@ u_int mkpcbid(struct Pcb * p);
 }
 
 #endif // !_ENV_H_
+
 

@@ -252,8 +252,10 @@ int sys_env_alloc(void)
     //e -> env_id = 0;
     e -> env_pthreads[0].pcb_tf.regs[2] = 0;
     e -> env_pthreads[0].pcb_status = ENV_NOT_RUNNABLE;
-    e -> env_pthreads[0].pcb_pri = curenv -> env_pthreads[0].pcb_pri;
-
+    // e -> env_pthreads[0].pcb_pri = curenv -> env_pthreads[0].pcb_pri;
+	e -> env_pthreads[0].attr.schedpolocy = curenv -> env_pthreads[0].attr.schedpolocy;
+	e -> env_pthreads[0].attr.schedpriority = curenv -> env_pthreads[0].attr.schedpriority;
+	e -> env_pthreads[0].attr.schedrtpriority = curenv -> env_pthreads[0].attr.schedrtpriority;
 	return e->env_id;
 	//	panic("sys_env_alloc not implemented");
 }
@@ -349,7 +351,7 @@ void sys_ipc_recv(int sysno, u_int dstva)
 	if (dstva >= UTOP) return;
 	if (curenv -> env_ipc_recving == 1) sys_yield();
     curenv -> env_ipc_recving = 1;
-	curenv -> env_ipc_waiting_pthread_no = curpcb -> pthread_id & 0x7;
+	curenv -> env_ipc_waiting_pthread_no = curpcb -> pthread_id & 0xf;
     curenv -> env_ipc_dstva = dstva;
     curenv -> env_pthreads[0].pcb_status = ENV_NOT_RUNNABLE;
     sys_yield();
@@ -433,13 +435,20 @@ int sys_thread_alloc(int sysno) {
 	if (r < 0) {
 		return r;
 	}
-	if (curenv) p -> pcb_pri = curenv -> env_pthreads[0].pcb_pri;
-	else p -> pcb_pri = 1;
+	p -> attr.schedpolocy = SCHED_OTHER;
+	p -> attr.schedpriority = 1;
+	p -> attr.schedrtpriority = 1;
+	if (curenv) {
+		// p -> pcb_pri = curenv -> env_pthreads[0].pcb_pri;
+		p -> attr.schedpolocy = curenv -> env_pthreads[0].attr.schedpolocy;
+		p -> attr.schedpriority = curenv -> env_pthreads[0].attr.schedpriority;
+		p -> attr.schedrtpriority = curenv -> env_pthreads[0].attr.schedrtpriority;
+	}
 	p -> pcb_status = PTHREAD_NOT_RUNNABLE;
 	LIST_INSERT_HEAD(pcb_sched_list, p, pcb_sched_link);
 	p -> pcb_tf.regs[2] = 0;
 	p -> pcb_tf.pc = p -> pcb_tf.cp0_epc;
-	return p -> pthread_id & 0x7;
+	return p -> pthread_id & 0xf;
 }
 
 int sys_thread_join(int sysno, u_int threadid, void ** value_ptr) {
@@ -448,7 +457,7 @@ int sys_thread_join(int sysno, u_int threadid, void ** value_ptr) {
 	if ((r = pthreadid2pcb(threadid, &p)) < 0) {
 		return r;
 	}
-	if (p -> pcb_detach == 1 || p -> pcb_joined_thread_ptr != 0) {
+	if (p -> attr.detachstate == 1 || p -> pcb_joined_thread_ptr != 0) {
 		return -E_PTHREAD_JOIN_FAIL;
 	}
 	if (p -> pcb_status == PTHREAD_FREE) {
@@ -543,3 +552,4 @@ int sys_sem_getvalue(int sysno, sem_t * sem, int * valuep) {
 	}
 	return 0;
 }
+

@@ -129,7 +129,8 @@
 #define E_SEM_ERROR		17
 #define E_SEM_NOTFOUND	18
 #define E_SEM_EAGAIN	19
-#define MAXERROR 19
+#define E_INVAL_ATTR	20
+#define MAXERROR 20
 #ifndef __ASSEMBLER__
 
 /*
@@ -181,4 +182,5 @@ extern volatile Pde* vpd[];
 extern void tlb_out(u_int entryhi);
 #endif //!__ASSEMBLER__
 #endif // !_MMU_H_
+
 

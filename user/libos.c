@@ -9,7 +9,7 @@ exit(void)
 	syscall_env_destroy(0);
 }
 void exit_thread_final(int exit_value) {
-	struct Pcb *p = &env->env_pthreads[syscall_get_threadid()&0x7];
+	struct Pcb *p = &env->env_pthreads[syscall_get_threadid()&0xf];
 	p->pcb_exit_value = exit_value;
 	syscall_thread_destroy(0);
 }
@@ -29,7 +29,7 @@ libmain(int argc, char **argv)
 	env = &envs[envid];
 	int pcbid;
 	pcbid = syscall_get_threadid();
-	pcbid = pcbid & 0x7;
+	pcbid = pcbid & 0xf;
 	pcb = &env->env_pthreads[pcbid];
 	// call user main routine
 	umain(argc, argv);
@@ -38,4 +38,5 @@ libmain(int argc, char **argv)
 	//syscall_thread_destroy(0);
 	//syscall_env_destroy(0);
 }
+
 

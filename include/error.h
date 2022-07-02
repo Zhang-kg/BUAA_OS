@@ -27,6 +27,8 @@
 #define E_SEM_ERROR		17
 #define E_SEM_NOTFOUND	18
 #define E_SEM_EAGAIN	19
-#define MAXERROR 19
+#define E_INVAL_ATTR	20
+#define MAXERROR 20
 #endif // _ERROR_H_
+
 

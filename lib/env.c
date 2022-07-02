@@ -8,6 +8,7 @@
 #include <sched.h>
 #include <pmap.h>
 #include <printf.h>
+#include <pthread.h>
 
 struct Env *envs = NULL;        // All environments
 struct Env *curenv = NULL;            // the current env
@@ -77,8 +78,13 @@ u_int mkenvid(struct Env *e) {
 
 u_int mkpcbid(struct Pcb * p) {
     struct Env * e = ROUNDDOWN(p, BY2PG);
-    u_int pcb_no = ((u_int)p - (u_int)e - BY2PG / 2) / (BY2PG / 16);
-    return ((e -> env_id << 3) | pcb_no);
+    int i = 0;
+    for (i = 0; i < PTHREAD_MAX; i++) {
+        if (&e -> env_pthreads[i] == p) {
+            return ((e -> env_id << 4) | i);
+        }
+    }
+    return ((e -> env_id << 3) & 0xf);
 }
 /* Overview:
  *  Convert an envid to an env pointer.
@@ -138,7 +144,7 @@ int pthreadid2pcb(u_int threadid, struct Pcb ** ppcb) {
         return 0;
     }
     e = &envs[ENVX(threadid >> 3)];
-    p = &e -> env_pthreads[threadid & 0x7];
+    p = &e -> env_pthreads[threadid & 0xf];
     if (p -> pcb_status == PTHREAD_FREE || p -> pthread_id != threadid) {
         *ppcb = 0;
         return -E_BAD_ENV;
@@ -249,7 +255,7 @@ int thread_alloc(struct Env * e, struct Pcb ** new) {
     printf("pthread id is 2'b%b, no is %d\n", p -> pthread_id, thread_no);
     p -> pcb_status = PTHREAD_RUNNABLE;
     p -> pcb_tf.cp0_status = 0x1000100C;
-    p -> pcb_tf.regs[29] = USTACKTOP - 4 * BY2PG * (p -> pthread_id & 0x7);
+    p -> pcb_tf.regs[29] = USTACKTOP - PDMAP * (p -> pthread_id & 0xf);
     p -> pcb_cancelState = PTHREAD_CANCEL_ENABLE;
     p -> pcb_cancelType = PTHREAD_CANCEL_DEFERRED;
     p -> pcb_canceled = 0;
@@ -257,7 +263,11 @@ int thread_alloc(struct Env * e, struct Pcb ** new) {
     p -> pcb_joined_thread_ptr = NULL;
     p -> pcb_exit_value = 0;
     p -> pcb_exit_ptr = (void *)&p -> pcb_exit_value;
-    p -> pcb_detach = 0;
+    // p -> pcb_detach = 0;
+    p -> attr.detachstate = PTHREAD_CREATE_JOINABLE;
+    p -> attr.schedpolocy = SCHED_OTHER;
+    p -> attr.schedrtpriority = 0;
+    p -> attr.stacksize = PTHREAD_MAX_STACKSIZE / 2;
     if (new != NULL) *new = p;
     return 0;
 }
@@ -309,6 +319,7 @@ env_alloc(struct Env **new, u_int parent_id)
         return r;
     }
 	p -> pcb_joined_thread_ptr = 0;
+    p -> attr.stacksize = PTHREAD_MAX_STACKSIZE;
 	p -> pcb_tf.regs[31] = exit_env;
     printf("pthread's id double check 2'b%b\n", p -> pthread_id);
     /* Step 4: Focus on initializing the sp register and cp0_status of env_tf field, located at this new Env. */
@@ -460,7 +471,8 @@ env_create_priority(u_char *binary, int size, int priority)
 	if (r < 0) return;
     /* Step 2: assign priority to the new env. */
 	// e -> env_pri = priority;
-    e -> env_pthreads[0].pcb_pri = priority;
+    // e -> env_pthreads[0].pcb_pri = priority;
+    e -> env_pthreads[0].attr.schedpriority = priority;
     /* Step 3: Use load_icode() to load the named elf binary,
        and insert it into env_sched_list using LIST_INSERT_HEAD. */
 	load_icode(e, binary, size);
@@ -616,3 +628,4 @@ env_run(struct Pcb * p)
 	// env_pop_tf(&(e -> env_tf), GET_ENV_ASID(e -> env_id));
     env_pop_tf(&curpcb -> pcb_tf, GET_ENV_ASID(curenv -> env_id));
 }
+
