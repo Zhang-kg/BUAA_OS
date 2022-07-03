@@ -123,7 +123,7 @@ again:
 				exit();
 			}
 			// Your code here -- open t for writing,
-			if ((fdnum = open (t, O_WRONLY)) < 0) {
+			if ((fdnum = open (t, O_WRONLY|O_TRUNC)) < 0) {
                 writef(" > open error");
                 exit();
             }

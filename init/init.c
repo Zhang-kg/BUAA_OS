@@ -14,6 +14,7 @@ void mips_init() {
 
 	env_init();
 
+	//ENV_CREATE(user_testbss);
 	//ENV_CREATE(user_fktest);
 	//ENV_CREATE(user_pingpong);
 	// ENV_CREATE(user_testpipe);

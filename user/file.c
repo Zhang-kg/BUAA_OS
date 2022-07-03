@@ -60,7 +60,7 @@ open(const char *path, int mode)
 			return r;
 		}
 	}
-
+	if (mode & O_TRUNC) ftruncate(fd2num(fd), 0);
 	// Step 5: Return the number of file descriptor.
 	return fd2num(fd);
 }
