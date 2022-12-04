@@ -183,23 +183,28 @@ fork(void)
 		return 0;
 	}
 	//1
+	writef("1\n");
 	for (i = 0; i < VPN(USTACKTOP); i++) {
         if (((*vpd)[i >> 10] & PTE_V) && ((*vpt)[i] & PTE_V)) {
             duppage(newenvid, i);
         }
     }
 	//2
+	writef("2\n");
 	if (syscall_mem_alloc(newenvid, UXSTACKTOP - BY2PG, PTE_V | PTE_R) < 0) {
         writef("Error at fork.c/fork. syscall_mem_alloc for Son_env failed\n");
 		return -1;
     }
 	//3
+	writef("3\m");
 	if (syscall_set_pgfault_handler(newenvid, __asm_pgfault_handler, UXSTACKTOP) < 0) {
         writef("Error at fork.c/fork. syscall_set_pgfault_handler for Son_env failed\n");
 		return -1;
     }
 	//4
+	writef("4\n");
 	syscall_set_env_status(newenvid, ENV_RUNNABLE);
+	writef("set status\n");
 	return newenvid;
 }
 

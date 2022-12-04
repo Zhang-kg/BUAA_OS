@@ -92,6 +92,12 @@ int	pthread_setcanceltype(int type, int *oldvalue);
 void	pthread_testcancel(void);
 int pthread_detach(pthread_t thread);
 int pthread_join(pthread_t thread, void ** value_ptr);
+int pthread_self(void);
+int pthread_setschedprio(pthread_t thread, int prio);
+int pthread_getschedprio(pthread_t thread, int * prio);
+int pthread_sched_setscheduler(pthread_t thread, int policy, const struct sched_param * param);
+int pthread_setstacksize(pthread_t thread, int stacksize);
+
 // sem.c
 int	sem_init(sem_t * sem, int shared, unsigned int value);
 int sem_destroy(sem_t * sem); 

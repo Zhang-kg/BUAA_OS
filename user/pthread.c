@@ -2,6 +2,22 @@
 #include <error.h>
 #include <mmu.h>
 
+
+int pthread_setstacksize(pthread_t thread, int stacksize) {
+	struct Pcb * p;
+	
+	p = &env -> env_pthreads[thread & 0xf];
+	if (p -> pthread_id != thread || p -> pcb_status == PTHREAD_FREE) {
+		return -E_INVAL;
+	}
+
+	if (p -> attr.stacksize > stacksize) {
+		return -E_INVAL;
+	}
+	p -> attr.stacksize = stacksize;
+	return 0;
+}
+
 int pthread_self(void) {
 	return syscall_get_threadid();
 }
@@ -162,8 +178,8 @@ int pthread_detach(pthread_t thread) {
 		return -E_PTHREAD_NOTFOUND;
 	}
 	if (p -> pcb_status == PTHREAD_FREE) {
-		u_int sp = USTACKTOP - BY2PG * 4 * (thread & 0xf);
-		for (i = 1; i <= 4; i++) {
+		u_int sp = USTACKTOP - PDMAP * (thread & 0xf);
+		for (i = 1; i <= 1024; i++) {
 			if ((r = syscall_mem_unmap(0, sp - i * BY2PG)) < 0) {
 				return r;
 			}

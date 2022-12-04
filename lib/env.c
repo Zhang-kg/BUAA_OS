@@ -143,7 +143,7 @@ int pthreadid2pcb(u_int threadid, struct Pcb ** ppcb) {
         *ppcb = curpcb;
         return 0;
     }
-    e = &envs[ENVX(threadid >> 3)];
+    e = &envs[ENVX(threadid >> 4)];
     p = &e -> env_pthreads[threadid & 0xf];
     if (p -> pcb_status == PTHREAD_FREE || p -> pthread_id != threadid) {
         *ppcb = 0;
@@ -544,6 +544,14 @@ void thread_free(struct Pcb * p) {
         env_free(e);
     }
     p -> pcb_status = PTHREAD_FREE;
+	if (p -> attr.detachstate == PTHREAD_CREATE_DETACHED) {
+        u_int sp = USTACKTOP - PDMAP * ((p -> pthread_id) & 0xf);
+        int i;
+        for (i = 1; i <= 1024; i++) {
+            page_remove(e -> env_pgdir, sp - i * BY2PG);
+        }
+        p -> pcb_exit_ptr = 0;
+    }
 }
 
 /* Overview:

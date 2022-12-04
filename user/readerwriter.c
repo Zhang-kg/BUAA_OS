@@ -35,7 +35,8 @@ void * reader(void * args) {
 void * writer(void * args) {
     int threadid = syscall_get_threadid();
     int i = 0;
-    for (i = 0; i < 5; i++) {
+    for (i = 0; i < 100; i++) writef("p");
+	for (i = 0; i < 5; i++) {
         sem_wait(&wtcntmutex);
         if (writecount == 0) {
             sem_wait(&queue);
